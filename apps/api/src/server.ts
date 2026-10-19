@@ -6,6 +6,7 @@ import {initialize} from './db.js';
 import {issueToken,verifyToken,validatePassword,ensureDemoPasswords} from './security.js';
 import {openApiSpec} from './openapi.js';
 import {updateProduct,buyOne} from './commerce.js';
+import {labReadOrder,labUpdateProduct} from './labs.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -25,8 +26,8 @@ app.get('/api/v1/account',c=>{const a=authenticate(c);if(!a)return c.json({error
 app.get('/api/v1/account/orders',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({orders:db.prepare('SELECT id,status,total_cents,created_at FROM orders WHERE customer_id=? ORDER BY id').all(a.id)})});
 app.get('/api/v1/orders/:id',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid order identifier'},400);
- const order=db.prepare('SELECT id,customer_id,status,total_cents,created_at FROM orders WHERE id=? AND customer_id=?').get(id,a.id);
- return order?c.json({order:{...order,items:db.prepare('SELECT id,product_id,quantity,unit_price_cents FROM order_items WHERE order_id=?').all(id)}}):c.json({error:'Order not found'},404);
+ const order=labReadOrder(db,id,a.id);
+ return order?c.json({order}):c.json({error:'Order not found'},404);
 });
 app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);
@@ -45,7 +46,7 @@ app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
 const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer';
 app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
 app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
-app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=updateProduct(db,id,await parseBody(c),a.role);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
+app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=labUpdateProduct(db,id,await parseBody(c),a.id);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
 app.post('/api/v1/purchases',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='customer')return c.json({error:'Customer role required'},403);const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.product_id))return c.json({error:'Invalid product'},422);const r=buyOne(db,a.id,body.product_id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed'}:{error:r.error},r.status as any)});
 app.onError((e,c)=>{console.error(e);return c.json({error:'Internal server error'},500)});
 app.notFound(c=>c.json({error:'Not found'},404));
