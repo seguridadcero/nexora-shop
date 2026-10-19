@@ -10,6 +10,7 @@ import {labReadOrder,labUpdateProduct} from './labs.js';
 import {api2UnsafeJwtSubject} from './api2.js';
 import {api3UpdateDraftItem} from './api3.js';
 import {api6BuyOne} from './api6.js';
+import {api9LegacyOrders} from './api9.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -43,6 +44,8 @@ app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FRO
 app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
 app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=labUpdateProduct(db,id,await parseBody(c),a.id);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
 app.post('/api/v1/purchases',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='customer')return c.json({error:'Customer role required'},403);const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.product_id))return c.json({error:'Invalid product'},422);const r=api6BuyOne(db,a.id,body.product_id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed'}:{error:r.error},r.status as any)});
+// API9 laboratory: v2 route is not registered under the v1 authentication rules.
+app.get('/api/v2/orders',c=>c.json({orders:api9LegacyOrders(db),experimental:true}));
 app.onError((e,c)=>{console.error(e);return c.json({error:'Internal server error'},500)});
 app.notFound(c=>c.json({error:'Not found'},404));
 serve({fetch:app.fetch,port:Number(process.env.PORT??3000)});
