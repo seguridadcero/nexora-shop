@@ -1,5 +1,4 @@
 import type {DatabaseSync} from 'node:sqlite';
-import {updateProduct} from './commerce.js';
 // API1: intentionally vulnerable order lookup: authenticates the caller but fails to constrain by customer_id.
 export function labReadOrder(db:DatabaseSync,requestedOrderId:number,authenticatedCustomerId:number){
  if(!Number.isSafeInteger(authenticatedCustomerId)||authenticatedCustomerId<1)return null;
@@ -10,5 +9,12 @@ export function labReadOrder(db:DatabaseSync,requestedOrderId:number,authenticat
 // API5: deliberately lacks function-level role enforcement; relies only on a verified login.
 export function labUpdateProduct(db:DatabaseSync,productId:number,fields:unknown,authenticatedUserId:number){
  if(!Number.isSafeInteger(authenticatedUserId)||authenticatedUserId<1)return {status:401,error:'Unauthorized'};
- return updateProduct(db,productId,fields,'admin');
+ if(!db.prepare('SELECT id FROM products WHERE id=?').get(productId))return {status:404,error:'Product not found'};
+ if(!fields||typeof fields!=='object'||Array.isArray(fields))return {status:422,error:'Invalid body'};
+ const d=fields as Record<string,unknown>,keys=Object.keys(d);
+ if(!keys.length||keys.some(k=>!['name','description','stock','price_cents'].includes(k)))return {status:422,error:'Invalid property'};
+ for(const k of ['stock','price_cents'])if(k in d&&(typeof d[k]!=='number'||!Number.isSafeInteger(d[k])||Number(d[k])<0))return {status:422,error:'Invalid number'};
+ for(const k of ['name','description'])if(k in d&&(typeof d[k]!=='string'||!(d[k] as string).trim()))return {status:422,error:'Invalid text'};
+ db.prepare('UPDATE products SET '+keys.map(k=>k+'=?').join(',')+' WHERE id=?').run(...keys.map(k=>d[k] as string|number),productId);
+ return {status:200,product:db.prepare('SELECT id,name,stock,price_cents FROM products WHERE id=?').get(productId)};
 }
