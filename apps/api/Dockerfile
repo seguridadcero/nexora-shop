@@ -13,5 +13,7 @@ COPY --from=builder /work/node_modules ./node_modules
 COPY --from=builder /work/apps/api/dist ./apps/api/dist
 COPY --from=builder /work/apps/api/package.json ./apps/api/package.json
 COPY database ./database
+RUN mkdir -p /data && chown node:node /data
+USER node
 EXPOSE 3000
 CMD ["node", "apps/api/dist/server.js"]
