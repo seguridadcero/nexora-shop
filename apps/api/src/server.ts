@@ -14,6 +14,8 @@ import {api9LegacyOrders} from './api9.js';
 import {api8InvalidOrderError} from './api8.js';
 import {api4Search} from './api4.js';
 import {api7ImportImage} from './api7.js';
+import {pendingSupplierProducts,importSupplierProducts} from './api10.js';
+import type {SupplierProduct} from './api10.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -55,6 +57,25 @@ app.post('/api/v1/products/:id/image/import',async c=>{
  const body=await parseBody(c);if(!body||typeof body.url!=='string')return c.json({error:'Invalid image URL'},422);
  try{const result=await api7ImportImage(body.url);return c.json(result,result.status as any)}
  catch{return c.json({error:'Upstream image fetch failed'},502)}
+});
+const supplierFeed=async():Promise<SupplierProduct[]>=>{
+ const response=await fetch('http://supplier:3001/supplier/feed/products',{signal:AbortSignal.timeout(5000)});
+ if(!response.ok)throw new Error('Supplier API unavailable');
+ const value=await response.json() as {products:SupplierProduct[]};
+ if(!Array.isArray(value.products))throw new Error('Invalid supplier feed');
+ return value.products;
+};
+app.get('/api/v1/admin/integrations',c=>{
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
+ return c.json({integrations:db.prepare('SELECT provider_code,base_url,enabled,last_successful_sync_at FROM integrations').all()});
+});
+app.get('/api/v1/admin/integrations/supplier/pending',async c=>{
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
+ try{const feed=await supplierFeed();return c.json({pending:pendingSupplierProducts(db,feed)})}catch{return c.json({error:'Supplier unavailable'},502)}
+});
+app.post('/api/v1/admin/integrations/supplier/sync',async c=>{
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
+ try{const feed=await supplierFeed();return c.json(importSupplierProducts(db,feed))}catch{return c.json({error:'Supplier sync failed'},502)}
 });
 // API9 laboratory: v2 route is not registered under the v1 authentication rules.
 app.get('/api/v2/orders',c=>c.json({orders:api9LegacyOrders(db),experimental:true}));
