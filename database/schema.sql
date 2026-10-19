@@ -8,3 +8,6 @@ CREATE TABLE IF NOT EXISTS product_sync_state (product_id INTEGER PRIMARY KEY RE
 
 CREATE TABLE IF NOT EXISTS carts (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL UNIQUE REFERENCES users(id),created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS cart_items (id INTEGER PRIMARY KEY,cart_id INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE,product_id INTEGER NOT NULL REFERENCES products(id),quantity INTEGER NOT NULL CHECK(quantity>0),unit_price_cents INTEGER NOT NULL CHECK(unit_price_cents>=0),UNIQUE(cart_id,product_id));
+
+CREATE TABLE IF NOT EXISTS payment_methods (id INTEGER PRIMARY KEY,customer_id INTEGER NOT NULL REFERENCES users(id),brand TEXT NOT NULL,last4 TEXT NOT NULL CHECK(length(last4)=4),exp_month INTEGER NOT NULL,exp_year INTEGER NOT NULL,label TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 1,UNIQUE(customer_id,label));
+CREATE TABLE IF NOT EXISTS order_payments (order_id INTEGER PRIMARY KEY REFERENCES orders(id),payment_method_id INTEGER NOT NULL REFERENCES payment_methods(id),status TEXT NOT NULL CHECK(status='simulated'),created_at TEXT NOT NULL);
