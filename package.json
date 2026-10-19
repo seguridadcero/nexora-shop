@@ -1,0 +1,15 @@
+{
+  "name": "nexora-shop",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @nexora/api",
+    "dev:web": "npm run dev -w @nexora/storefront",
+    "test:data": "node --experimental-strip-types --test apps/api/test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
