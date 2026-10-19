@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
+import {ensureDemoPayments} from './payments.js';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 const dbPath = process.env.DB_PATH ?? resolve('data/nexora.db');
@@ -10,7 +11,7 @@ export function initialize(force = false) {
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 3000;');
   if (force) {
-    db.exec('DROP TABLE IF EXISTS cart_items; DROP TABLE IF EXISTS carts; DROP TABLE IF EXISTS product_sync_state; DROP TABLE IF EXISTS integrations; DROP TABLE IF EXISTS order_items; DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS products; DROP TABLE IF EXISTS users;');
+    db.exec('DROP TABLE IF EXISTS order_payments; DROP TABLE IF EXISTS payment_methods; DROP TABLE IF EXISTS cart_items; DROP TABLE IF EXISTS carts; DROP TABLE IF EXISTS product_sync_state; DROP TABLE IF EXISTS integrations; DROP TABLE IF EXISTS order_items; DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS products; DROP TABLE IF EXISTS users;');
   }
   db.exec(readFileSync(schemaPath,'utf8'));
   const count = (db.prepare('SELECT COUNT(*) AS n FROM users').get() as {n:number}).n;
@@ -32,5 +33,6 @@ export function initialize(force = false) {
       db.exec('COMMIT');
     }catch(e){db.exec('ROLLBACK');throw e}
   }
+  ensureDemoPayments(db);
   return db;
 }
