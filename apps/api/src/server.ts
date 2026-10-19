@@ -9,7 +9,6 @@ import {updateProduct,buyOne} from './commerce.js';
 import {labReadOrder,labUpdateProduct} from './labs.js';
 import {api2UnsafeJwtSubject} from './api2.js';
 import {getCart,addToCart,updateCartItem,removeCartItem,checkoutCart} from './cart.js';
-import {api3UpdateDraftItem} from './api3.js';
 import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
 import {api8InvalidOrderError} from './api8.js';
@@ -45,12 +44,6 @@ app.get('/api/v1/orders/:id',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json(api8InvalidOrderError(db,c.req.param('id')),500);
  const order=labReadOrder(db,id,a.id);
  return order?c.json({order}):c.json({error:'Order not found'},404);
-});
-app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
- const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);
- const id=parseId(c.req.param('id')),itemId=parseId(c.req.param('itemId'));if(id===null||itemId===null)return c.json({error:'Invalid identifier'},400);
- const result=api3UpdateDraftItem(db,a.id,id,itemId,await parseBody(c));
- return c.json(result.status===200?{order_id:id,item_id:itemId,total_cents:result.total_cents}:{error:result.error},result.status as any);
 });
 app.get('/api/v1/cart',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({cart:getCart(db,a.id)})});
 app.post('/api/v1/cart/items',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const b=await parseBody(c);const r=addToCart(db,a.id,b?.product_id,b?.quantity??1);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
