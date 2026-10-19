@@ -13,6 +13,7 @@ import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
 import {api8InvalidOrderError} from './api8.js';
 import {api4Search} from './api4.js';
+import {api7ImportImage} from './api7.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -47,6 +48,14 @@ app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FRO
 app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
 app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=labUpdateProduct(db,id,await parseBody(c),a.id);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
 app.post('/api/v1/purchases',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='customer')return c.json({error:'Customer role required'},403);const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.product_id))return c.json({error:'Invalid product'},422);const r=api6BuyOne(db,a.id,body.product_id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed'}:{error:r.error},r.status as any)});
+app.post('/api/v1/products/:id/image/import',async c=>{
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
+ const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product'},400);
+ if(!db.prepare('SELECT id FROM products WHERE id=?').get(id))return c.json({error:'Product not found'},404);
+ const body=await parseBody(c);if(!body||typeof body.url!=='string')return c.json({error:'Invalid image URL'},422);
+ try{const result=await api7ImportImage(body.url);return c.json(result,result.status as any)}
+ catch{return c.json({error:'Upstream image fetch failed'},502)}
+});
 // API9 laboratory: v2 route is not registered under the v1 authentication rules.
 app.get('/api/v2/orders',c=>c.json({orders:api9LegacyOrders(db),experimental:true}));
 app.onError((e,c)=>{console.error(e);return c.json({error:'Internal server error'},500)});
