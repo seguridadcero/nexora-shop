@@ -21,6 +21,13 @@ const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
 const parseId=(v:string)=>/^[1-9]\d*$/.test(v)&&Number.isSafeInteger(Number(v))?Number(v):null;
 const parseBody=async(c:any)=>{try{return await c.req.json()}catch{return null}};
+let lastCpu=process.cpuUsage(),lastSample=process.hrtime.bigint();
+app.get('/api/internal/metrics',c=>{
+ const elapsed=Number(process.hrtime.bigint()-lastSample)/1000;
+ const current=process.cpuUsage(),used=(current.user-lastCpu.user)+(current.system-lastCpu.system);
+ lastCpu=current;lastSample=process.hrtime.bigint();
+ return c.json({cpu_percent:elapsed>0?Math.round(used/elapsed*10000)/100:0,ram_mb:Math.round(process.memoryUsage().rss/1048576*100)/100});
+});
 app.get('/api/health',c=>c.json({status:'ok',application:'Nexora Shop'}));
 app.get('/api/openapi.json',c=>c.json(openApiSpec));
 app.get('/api/docs',c=>c.html('<!doctype html><html><head><title>Nexora Shop API</title><link rel="stylesheet" href="/api/docs/swagger-ui.css"></head><body><div id="swagger-ui"></div><script src="/api/docs/swagger-ui-bundle.js"></script><script>SwaggerUIBundle({url:"/api/openapi.json",dom_id:"#swagger-ui"})</script></body></html>'));
