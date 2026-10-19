@@ -31,7 +31,7 @@ async function run(){
  assert.match((await request('/api/v1/products/1101')).data.product.description,/onerror/);
  record('API10 supplier price override and stored HTML');
  const mon=await request('/metrics',{origin:monitor});assert.equal(mon.status,200);for(const k of ['cpu','ram','latency'])assert.ok(Number.isFinite(mon.data[k]));record('API4 monitor: CPU, RAM, latency');
- const ac=new AbortController();try{const events=await fetch(monitor+'/events',{signal:ac.signal});assert.equal(events.status,200);assert.match(events.headers.get('content-type')??'',/text\\/event-stream/);const chunk=await events.body.getReader().read();assert.match(new TextDecoder().decode(chunk.value),/data: .*"cpu":/);record('API4 live SSE monitoring stream')}finally{ac.abort()}
+ const ac=new AbortController();try{const events=await fetch(monitor+'/events',{signal:ac.signal});assert.equal(events.status,200);assert.ok((events.headers.get('content-type')??'').includes('text/event-stream'));const chunk=await events.body.getReader().read();assert.match(new TextDecoder().decode(chunk.value),/data: .*"cpu":/);record('API4 live SSE monitoring stream')}finally{ac.abort()}
 
  assert.equal((await request('/api/v1/admin/integrations/supplier/sync',{method:'POST',token:alice})).status,403);record('Control: integrations remain admin-only');
  record('All HTTP scenarios passed');
