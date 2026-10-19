@@ -3,6 +3,7 @@ import {serve} from '@hono/node-server';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {initialize} from './db.js';
+import {getPaymentMethods,payForOrder,getOrderPayment} from './payments.js';
 import {issueToken,verifyToken,validatePassword,ensureDemoPasswords} from './security.js';
 import {openApiSpec} from './openapi.js';
 import {updateProduct,buyOne} from './commerce.js';
@@ -39,6 +40,10 @@ app.post('/api/v1/auth/login',async c=>{
  return c.json({access_token:issueToken({sub:String(u.id),role:u.role}),token_type:'Bearer',expires_in:3600,user:{id:u.id,email:u.email,display_name:u.display_name,role:u.role}});
 });
 app.get('/api/v1/account',c=>{const id=api2UnsafeJwtSubject(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');if(id===null)return c.json({error:'Unauthorized'},401);const user=db.prepare('SELECT id,email,display_name,role FROM users WHERE id=?').get(id);return user?c.json({user}):c.json({error:'Unauthorized'},401)});
+app.get('/api/v1/account/payment-methods',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({payment_methods:getPaymentMethods(db,a.id)})});
+app.get('/api/v1/account/profile',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const profile=db.prepare('SELECT id,email,display_name,role,created_at FROM users WHERE id=?').get(a.id);return c.json({profile})});
+app.get('/api/v1/account/orders/:id/payment',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);return c.json({payment:getOrderPayment(db,a.id,id)})});
+app.post('/api/v1/account/orders/:id/payment',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));const body=await parseBody(c);if(id===null||!Number.isSafeInteger(body?.payment_method_id))return c.json({error:'Invalid payment selection'},400);const r=payForOrder(db,a.id,id,body.payment_method_id);return c.json(r.status===200?{payment:r.payment}:{error:r.error},r.status as any)});
 app.get('/api/v1/account/orders',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({orders:db.prepare('SELECT id,status,total_cents,created_at FROM orders WHERE customer_id=? AND status=\'confirmed\' ORDER BY id').all(a.id)})});
 app.get('/api/v1/orders/:id',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json(api8InvalidOrderError(db,c.req.param('id')),500);
