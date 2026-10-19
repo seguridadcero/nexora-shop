@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync} from 'node:fs';
+import {getCart,addToCart,updateCartItem,removeCartItem,checkoutCart} from '../src/cart.ts';
+function fixture(){const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');db.exec(readFileSync('database/schema.sql','utf8'));db.exec(readFileSync('database/seed.sql','utf8'));return db}
+test('Alice has a cart separate from confirmed orders',()=>{const db=fixture();assert.equal(getCart(db,101).items[0].product_id,1001);assert.equal(db.prepare("SELECT COUNT(*) n FROM orders WHERE customer_id=101 AND status='draft'").get().n,0);db.close()});
+test('cart supports adding, editing quantities and removing products',()=>{const db=fixture();const added=addToCart(db,101,1002,2);assert.equal(added.status,200);const item=getCart(db,101).items.find(x=>x.product_id===1002);assert.equal(item.quantity,2);assert.equal(updateCartItem(db,101,item.id,{quantity:3}).status,200);assert.equal(removeCartItem(db,101,item.id).status,200);assert.ok(!getCart(db,101).items.some(x=>x.product_id===1002));db.close()});
+test('API3 changes cart item unit price while product price is intact',()=>{const db=fixture();const item=getCart(db,101).items[0];assert.equal(updateCartItem(db,101,item.id,{quantity:2,unit_price_cents:1}).status,200);assert.equal(getCart(db,101).total_cents,2);assert.equal(db.prepare('SELECT price_cents FROM products WHERE id=1001').get().price_cents,3900);db.close()});
+test('cart ownership is enforced',()=>{const db=fixture();const item=getCart(db,101).items[0];assert.equal(updateCartItem(db,102,item.id,{quantity:2}).status,404);assert.equal(removeCartItem(db,102,item.id).status,404);db.close()});
+test('checkout creates confirmed order with cart snapshot and empties cart',()=>{const db=fixture();const item=getCart(db,101).items[0];updateCartItem(db,101,item.id,{quantity:2});const r=checkoutCart(db,101);assert.equal(r.status,201);assert.equal(db.prepare('SELECT status,total_cents FROM orders WHERE id=?').get(r.order_id).status,'confirmed');assert.equal(getCart(db,101).items.length,0);db.close()});
+test('checkout rejects insufficient stock without losing cart',()=>{const db=fixture();const item=getCart(db,101).items[0];updateCartItem(db,101,item.id,{quantity:100});assert.equal(checkoutCart(db,101).status,409);assert.equal(getCart(db,101).items[0].quantity,100);db.close()});
