@@ -8,6 +8,7 @@ import {openApiSpec} from './openapi.js';
 import {updateProduct,buyOne} from './commerce.js';
 import {labReadOrder,labUpdateProduct} from './labs.js';
 import {api2UnsafeJwtSubject} from './api2.js';
+import {api3UpdateDraftItem} from './api3.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -33,16 +34,8 @@ app.get('/api/v1/orders/:id',c=>{
 app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);
  const id=parseId(c.req.param('id')),itemId=parseId(c.req.param('itemId'));if(id===null||itemId===null)return c.json({error:'Invalid identifier'},400);
- const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.quantity)||body.quantity<1||body.quantity>100)return c.json({error:'Invalid quantity or property'},422);
- const order=db.prepare('SELECT id,status FROM orders WHERE id=? AND customer_id=?').get(id,a.id) as {status:string}|undefined;
- if(!order)return c.json({error:'Order not found'},404);if(order.status!=='draft')return c.json({error:'Order not editable'},409);
- if(!db.prepare('SELECT id FROM order_items WHERE id=? AND order_id=?').get(itemId,id))return c.json({error:'Item not found'},404);
- db.exec('BEGIN IMMEDIATE');
- try{
- db.prepare('UPDATE order_items SET quantity=? WHERE id=? AND order_id=?').run(body.quantity,itemId,id);
- const total=(db.prepare('SELECT SUM(quantity*unit_price_cents) AS total FROM order_items WHERE order_id=?').get(id) as {total:number}).total;
- db.prepare('UPDATE orders SET total_cents=? WHERE id=?').run(total,id);db.exec('COMMIT');return c.json({order_id:id,item_id:itemId,quantity:body.quantity,total_cents:total});
- }catch(e){db.exec('ROLLBACK');throw e}
+ const result=api3UpdateDraftItem(db,a.id,id,itemId,await parseBody(c));
+ return c.json(result.status===200?{order_id:id,item_id:itemId,total_cents:result.total_cents}:{error:result.error},result.status as any);
 });
 const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer';
 app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
