@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      DB_PATH: /data/nexora.db
+      PORT: '3000'
+      DEMO_ACCOUNTS: 'YES'
+      JWT_SECRET_FILE: /data/jwt-secret
+    volumes:
+      - nexora_data:/data
+    networks: [app]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 8
+  web:
+    build:
+      context: .
+      dockerfile: apps/storefront/Dockerfile
+    ports:
+      - '127.0.0.1:8080:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [app]
+    restart: unless-stopped
+networks:
+  app: {}
+volumes:
+  nexora_data: {}
