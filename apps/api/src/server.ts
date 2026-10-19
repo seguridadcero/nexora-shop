@@ -8,7 +8,7 @@ import {openApiSpec} from './openapi.js';
 import {updateProduct,buyOne} from './commerce.js';
 import {labReadOrder,labUpdateProduct} from './labs.js';
 import {api2UnsafeJwtSubject} from './api2.js';
-import {api3UpdateDraftItem} from './api3.js';
+import {getCart,addToCart,updateCartItem,removeCartItem,checkoutCart} from './cart.js';
 import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
 import {api8InvalidOrderError} from './api8.js';
