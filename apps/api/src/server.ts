@@ -13,7 +13,7 @@ import {getCart,addToCart,updateCartItem,removeCartItem,checkoutCart} from './ca
 import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
 import {api8InvalidOrderError} from './api8.js';
-import {api4Search} from './api4.js';
+import {api4Search,api4List} from './api4.js';
 import {api7ImportImage} from './api7.js';
 import {pendingSupplierProducts,importSupplierProducts} from './api10.js';
 import type {SupplierProduct} from './api10.js';
@@ -56,8 +56,8 @@ app.patch('/api/v1/cart/items/:itemId',async c=>{const a=authenticate(c);if(!a)r
 app.delete('/api/v1/cart/items/:itemId',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=removeCartItem(db,a.id,id);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
 app.post('/api/v1/cart/checkout',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const body=await parseBody(c);const r=checkoutCart(db,a.id,body??undefined);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed',total_cents:r.total_cents}:{error:r.error},r.status as any)});
 const fields='id,name,description,price_cents,price_cents / 100.0 AS price,stock,is_limited_edition,max_per_customer,image_path';
-app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'');return c.json(r.status===200?{products:r.products,diagnostics:r.diagnostics}:{error:r.error},r.status as any)});
-app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
+app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'',c.req.query('limit'),c.req.query('offset'));return c.json(r.status===200?{products:r.products,total:r.total,limit:r.limit,offset:r.offset,has_more:r.has_more,diagnostics:r.diagnostics}:{error:r.error},r.status as any)});
+app.get('/api/v1/products',c=>{const r=api4List(db,c.req.query('limit'),c.req.query('offset'));return c.json(r.status===200?{products:r.products,total:r.total,limit:r.limit,offset:r.offset,has_more:r.has_more,diagnostics:r.diagnostics}:{error:r.error},r.status as any)});
 app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
 app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=labUpdateProduct(db,id,await parseBody(c),a.id);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
 app.post('/api/v1/purchases',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='customer')return c.json({error:'Customer role required'},403);const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.product_id))return c.json({error:'Invalid product'},422);const r=api6BuyOne(db,a.id,body.product_id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed'}:{error:r.error},r.status as any)});
