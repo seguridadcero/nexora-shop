@@ -7,6 +7,7 @@ import {issueToken,verifyToken,validatePassword,ensureDemoPasswords} from './sec
 import {openApiSpec} from './openapi.js';
 import {updateProduct,buyOne} from './commerce.js';
 import {labReadOrder,labUpdateProduct} from './labs.js';
+import {api2UnsafeJwtSubject} from './api2.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -22,7 +23,7 @@ app.post('/api/v1/auth/login',async c=>{
  if(!u||!validatePassword(b.password,u.password_hash))return c.json({error:'Invalid credentials'},401);
  return c.json({access_token:issueToken({sub:String(u.id),role:u.role}),token_type:'Bearer',expires_in:3600,user:{id:u.id,email:u.email,display_name:u.display_name,role:u.role}});
 });
-app.get('/api/v1/account',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const user=db.prepare('SELECT id,email,display_name,role FROM users WHERE id=?').get(a.id);return user?c.json({user}):c.json({error:'Unauthorized'},401)});
+app.get('/api/v1/account',c=>{const id=api2UnsafeJwtSubject(/^Bearer\\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');if(id===null)return c.json({error:'Unauthorized'},401);const user=db.prepare('SELECT id,email,display_name,role FROM users WHERE id=?').get(id);return user?c.json({user}):c.json({error:'Unauthorized'},401)});
 app.get('/api/v1/account/orders',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({orders:db.prepare('SELECT id,status,total_cents,created_at FROM orders WHERE customer_id=? ORDER BY id').all(a.id)})});
 app.get('/api/v1/orders/:id',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid order identifier'},400);
