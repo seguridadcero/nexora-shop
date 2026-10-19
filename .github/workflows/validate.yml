@@ -49,6 +49,8 @@ jobs:
           curl -fsS http://127.0.0.1:8080/api/docs -o /tmp/nexora-swagger.html
       - name: Verify ten OWASP API lab scenarios over HTTP
         run: node scripts/smoke.mjs
+      - name: Controlled API4 load assessment
+        run: node scripts/api4-load-test.mjs
       - name: Diagnostics on failure
         if: failure()
         run: |
