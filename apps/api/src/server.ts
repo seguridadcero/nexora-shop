@@ -11,6 +11,7 @@ import {api2UnsafeJwtSubject} from './api2.js';
 import {api3UpdateDraftItem} from './api3.js';
 import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
+import {api8InvalidOrderError} from './api8.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -29,7 +30,7 @@ app.post('/api/v1/auth/login',async c=>{
 app.get('/api/v1/account',c=>{const id=api2UnsafeJwtSubject(/^Bearer\\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');if(id===null)return c.json({error:'Unauthorized'},401);const user=db.prepare('SELECT id,email,display_name,role FROM users WHERE id=?').get(id);return user?c.json({user}):c.json({error:'Unauthorized'},401)});
 app.get('/api/v1/account/orders',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({orders:db.prepare('SELECT id,status,total_cents,created_at FROM orders WHERE customer_id=? ORDER BY id').all(a.id)})});
 app.get('/api/v1/orders/:id',c=>{
- const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid order identifier'},400);
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json(api8InvalidOrderError(db,c.req.param('id')),500);
  const order=labReadOrder(db,id,a.id);
  return order?c.json({order}):c.json({error:'Order not found'},404);
 });
