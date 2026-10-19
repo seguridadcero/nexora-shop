@@ -12,12 +12,16 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Verify project files uploaded
+      - name: Verify project source tree
+        shell: bash
         run: |
-          test -f compose.yaml
-          test -f package.json
-          test -f apps/api/package.json
-          test -f apps/storefront/package.json
+          set -euo pipefail
+          for file in compose.yaml package.json apps/api/package.json apps/storefront/package.json database/schema.sql; do
+            if [ ! -f "$file" ]; then
+              echo "::error title=Missing application sources::Missing $file"
+              exit 1
+            fi
+          done
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
