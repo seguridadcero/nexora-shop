@@ -11,7 +11,10 @@ type Cart={items:CartItem[];total_cents:number};
 type OrderDetail={id:number;status:string;total_cents:number;items:OrderItem[]};
 type SyncItem={id:string;name:string;description:string;price_cents:number;version:number};
 type Integration={provider_code:string;base_url:string;enabled:number;last_successful_sync_at:string|null};
-const money=(n:number)=>'
+const money=(n:number)=>String.fromCharCode(36)+(n/100).toFixed(2);
+type GuestLine={product_id:number;quantity:number};
+const guestKey='nexora-guest-cart-v1';
+function readGuest():GuestLine[]{try{const data=JSON.parse(localStorage.getItem(guestKey)??'[]');return Array.isArray(data)?data.filter(x=>Number.isSafeInteger(x.product_id)&&Number.isSafeInteger(x.quantity)&&x.quantity>=1&&x.quantity<=100):[]}catch{return []}}
 function App(){
  const [guestCart,setGuestCart]=useState<GuestLine[]>(readGuest),[selectedQuantity,setSelectedQuantity]=useState(1),[productDetail,setProductDetail]=useState<number|null>(null),[checkout,setCheckout]=useState(false),[loginReturn,setLoginReturn]=useState(false),[stockEdit,setStockEdit]=useState<number|null>(null),[stockValue,setStockValue]=useState(''),[imageEdit,setImageEdit]=useState<number|null>(null),[imageUrl,setImageUrl]=useState(''),[entered,setEntered]=useState(false),[cart,setCart]=useState<Cart|null>(null),[integration,setIntegration]=useState<Integration|null>(null),[supplierStatus,setSupplierStatus]=useState<'connecting'|'connected'|'unavailable'>('connecting'),[orderDetail,setOrderDetail]=useState<OrderDetail|null>(null),[syncReport,setSyncReport]=useState<SyncItem[]>([]),[pending,setPending]=useState<SyncItem[]>([]),[importPreview,setImportPreview]=useState(''),[purchasedIds,setPurchasedIds]=useState<number[]>([]),[products,setProducts]=useState<Product[]>([]),[email,setEmail]=useState('alice@nexora.example'),[password,setPassword]=useState(''),[token,setToken]=useState(''),[account,setAccount]=useState<Account|null>(null),[orders,setOrders]=useState<Order[]>([]),[view,setView]=useState<'products'|'login'|'account'|'orders'|'admin'|'integrations'|'cart'>('products'),[error,setError]=useState('');
  async function loadProducts(){try{const r=await fetch('/api/v1/products');if(!r.ok)throw Error('Catalog unavailable');setProducts((await r.json()).products)}catch(e){setError(String(e))}}
