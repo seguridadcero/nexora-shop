@@ -51,6 +51,11 @@ app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
  const result=api3UpdateDraftItem(db,a.id,id,itemId,await parseBody(c));
  return c.json(result.status===200?{order_id:id,item_id:itemId,total_cents:result.total_cents}:{error:result.error},result.status as any);
 });
+app.get('/api/v1/cart',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({cart:getCart(db,a.id)})});
+app.post('/api/v1/cart/items',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const b=await parseBody(c);const r=addToCart(db,a.id,b?.product_id,b?.quantity??1);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
+app.patch('/api/v1/cart/items/:itemId',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=updateCartItem(db,a.id,id,await parseBody(c));return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
+app.delete('/api/v1/cart/items/:itemId',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=removeCartItem(db,a.id,id);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
+app.post('/api/v1/cart/checkout',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const r=checkoutCart(db,a.id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed',total_cents:r.total_cents}:{error:r.error},r.status as any)});
 const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer';
 app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'');return c.json(r.status===200?{products:r.products,diagnostics:r.diagnostics}:{error:r.error},r.status as any)});
 app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
