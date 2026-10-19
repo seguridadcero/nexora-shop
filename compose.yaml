@@ -37,9 +37,22 @@ services:
     security_opt: ['no-new-privileges:true']
     mem_limit: 96m
     cpus: 0.25
+  supplier:
+    build:
+      context: .
+      dockerfile: services/supplier/Dockerfile
+    environment:
+      SUPPLIER_DB: /data/products.json
+    volumes: [supplier_data:/data]
+    ports: ['127.0.0.1:8081:3001']
+    networks: [lab,edge]
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.25
 networks:
   lab:
     internal: true
   edge: {}
 volumes:
   nexora_data: {}
+  supplier_data: {}
