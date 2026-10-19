@@ -5,7 +5,7 @@ import {performance} from 'node:perf_hooks';
 export function api4Search(db:DatabaseSync,query:string,rounds=12500){
  if(typeof query!=='string'||query.length>100)return {status:422,error:'Invalid search'};
  const started=performance.now();
- const products=db.prepare('SELECT id,name,description,price_cents,stock FROM products WHERE lower(name) LIKE lower(?)').all('%'+query+'%');
+ const products=db.prepare('SELECT id,name,description,price_cents,price_cents / 100.0 AS price,stock FROM products WHERE lower(name) LIKE lower(?)').all('%'+query+'%');
  let checksum=0;
  const stmt=db.prepare('SELECT id,name,description FROM products');
  for(let i=0;i<rounds;i++){
