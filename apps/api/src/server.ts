@@ -12,6 +12,7 @@ import {api3UpdateDraftItem} from './api3.js';
 import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
 import {api8InvalidOrderError} from './api8.js';
+import {api4Search} from './api4.js';
 const db=initialize();ensureDemoPasswords(db);const app=new Hono();
 const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
 const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
@@ -41,6 +42,7 @@ app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
  return c.json(result.status===200?{order_id:id,item_id:itemId,total_cents:result.total_cents}:{error:result.error},result.status as any);
 });
 const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer';
+app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'');return c.json(r.status===200?{products:r.products,diagnostics:r.diagnostics}:{error:r.error},r.status as any)});
 app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
 app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
 app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=labUpdateProduct(db,id,await parseBody(c),a.id);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
