@@ -37,6 +37,18 @@ services:
     security_opt: ['no-new-privileges:true']
     mem_limit: 96m
     cpus: 0.25
+  resource-monitor:
+    build:
+      context: .
+      dockerfile: services/resource-monitor/Dockerfile
+    ports: ['127.0.0.1:8082:3010']
+    networks: [lab,edge]
+    depends_on:
+      api: {condition: service_healthy}
+    read_only: true
+    security_opt: ['no-new-privileges:true']
+    mem_limit: 96m
+    cpus: 0.25
   supplier:
     build:
       context: .
