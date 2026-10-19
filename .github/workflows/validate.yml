@@ -1,0 +1,50 @@
+name: Validate Nexora Shop
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify project files uploaded
+        run: |
+          test -f compose.yaml
+          test -f package.json
+          test -f apps/api/package.json
+          test -f apps/storefront/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build API
+        run: npm run build -w @nexora/api
+      - name: Build storefront
+        run: npm run build -w @nexora/storefront
+      - name: SQLite fixture tests
+        run: npm run test:data
+      - name: Check Compose
+        run: docker compose config --quiet
+      - name: Run containers
+        run: docker compose up --build -d --wait
+      - name: HTTP smoke tests
+        run: |
+          set -euo pipefail
+          curl -fsS http://127.0.0.1:8080/api/health
+          curl -fsS http://127.0.0.1:8080/api/v1/products
+          curl -fsS http://127.0.0.1:8080/api/openapi.json -o /tmp/nexora-openapi.json
+          curl -fsS http://127.0.0.1:8080/api/docs -o /tmp/nexora-swagger.html
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          docker compose ps || true
+          docker compose logs --no-color --tail=100 || true
+      - name: Cleanup
+        if: always()
+        run: docker compose down --volumes || true
