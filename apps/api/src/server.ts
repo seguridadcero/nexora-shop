@@ -62,7 +62,7 @@ app.post('/api/v1/products/:id/image/import',async c=>{
  const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product'},400);
  if(!db.prepare('SELECT id FROM products WHERE id=?').get(id))return c.json({error:'Product not found'},404);
  const body=await parseBody(c);if(!body||typeof body.url!=='string')return c.json({error:'Invalid image URL'},422);
- try{const result=await api7ImportImage(body.url);return c.json(result,result.status as any)}
+ try{const result=await api7ImportImage(body.url);if(result.status===200)db.prepare('UPDATE products SET image_path=?,updated_at=? WHERE id=?').run(body.url,new Date().toISOString(),id);return c.json(result,result.status as any)}
  catch{return c.json({error:'Upstream image fetch failed'},502)}
 });
 const supplierFeed=async():Promise<SupplierProduct[]>=>{
