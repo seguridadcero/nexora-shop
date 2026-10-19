@@ -1,42 +1,55 @@
-# Nexora Shop — OWASP API Security Training
+# Nexora Shop — OWASP API Security Top 10:2023 laboratory
 
-**Status:** functional storefront foundation in development. The ten intentionally vulnerable scenarios have **not** yet been completed or validated. Use only in a locally isolated environment.
+**Status: development / unverified Docker deployment.** This is an intentionally vulnerable fictional e-commerce application. Run it **only on an isolated local host**. Do not forward ports, expose a proxy publicly, or place real credentials or data in the lab.
 
-## Requirements
+## Run locally
 
-Docker Engine with Compose v2. No production data or external services are needed.
-
-## Run
+Prerequisite: Docker Engine with Compose v2.
 
 ```sh
 docker compose up --build -d --wait
 ```
 
-Open http://127.0.0.1:8080 and Swagger UI at http://127.0.0.1:8080/api/docs.
+| Component | URL | Purpose |
+|---|---|---|
+| Nexora Storefront | http://127.0.0.1:8080 | Customer and Admin UI |
+| Swagger UI | http://127.0.0.1:8080/api/docs | Legitimate API contract |
+| Supplier Panel | http://127.0.0.1:8081/supplier/panel | Edit fictional supplier records |
+| Resource Monitor | http://127.0.0.1:8082 | Real CPU %, RAM MB and API latency ms |
 
-The exposed web port is bound to **127.0.0.1 only**, not every host interface. Do not publish or forward this application to the public internet.
+The API, supplier, and internal SSRF target communicate through a private Docker network. Host-facing ports bind to `127.0.0.1` only. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
 
-## Fictional demo accounts
+### Fictional customer accounts
 
 | Role | Email | Password |
 |---|---|---|
 | Customer Alice | alice@nexora.example | AliceDemo!2026 |
 | Customer Bob | bob@nexora.example | BobDemo!2026 |
 | Admin | admin@nexora.example | AdminDemo!2026 |
+| Supplier Admin (independent) | admin | admin |
 
-These credentials are only intended for this isolated lab. No real transactions or payment integrations exist.
+No real payments or purchases take place.
 
-## Reinitialize fictional data
+## Lab coverage
 
-```sh
-docker compose exec -e ALLOW_RESET=YES api node apps/api/dist/reset.js
-```
+| OWASP 2023 | Intended scenario |
+|---|---|
+| API1 | Alice obtains Bob's order by changing ID |
+| API2 | Only GET /api/v1/account fails to validate the JWT signature |
+| API3 | Draft order mass assignment changes unit_price_cents |
+| API4 | Costly product searches without request/concurrency limits; independent monitor |
+| API5 | Customer edits Admin-only product stock |
+| API6 | Repeat purchases exceed per-customer limited edition rule |
+| API7 | Admin image import sends a request to an internal Docker HTTP target |
+| API8 | Invalid order ID leaks database query and stack |
+| API9 | Experimental v2 orders endpoint lacks authentication |
+| API10 | Supplier price override below internal minimum and HTML injected into Admin sync report |
 
-This is **destructive**: all demo application data is reset.
+The two API10 consequences bring the intended exploitation demonstrations to **eleven**.
 
-## Local unit tests
+## Run tests
 
-Node.js 22.13+ is recommended:
+Node.js 22.13+ recommended:
 
 ```sh
 npm install
@@ -45,15 +58,33 @@ npm run build -w @nexora/api
 npm run build -w @nexora/storefront
 ```
 
-GitHub Actions also attempts to build the containers and smoke-test HTTP endpoints. Its results must be inspected before treating the Docker deployment as verified.
+Once Docker is running, execute the HTTP regression:
 
-## Project layout
+```sh
+node scripts/smoke.mjs
+```
 
-- `apps/api` — Hono, SQLite, JWT, commerce routes and OpenAPI
-- `apps/storefront` — React/Vite shop and admin foundation
-- `database` — local seed fixtures and schema
-- `compose.yaml` — API, nginx proxy, isolated internal app network
+This test modifies **fictional** orders, stock and supplier prices; begin with reset fixtures. The GitHub Actions workflow also attempts these steps. No CI success has been confirmed yet, so do not treat the application as fully tested.
 
-## Outstanding work
+## Reset everything
 
-API1–API10 vulnerability labs, Supplier API, internal SSRF destination, API4 resource monitor, full regression, and Docker smoke-test confirmation. Current authorization and purchase limits are a **safe baseline** and should not be mistaken for the intentionally vulnerable final lessons.
+```sh
+docker compose down --volumes
+docker compose up --build -d --wait
+```
+
+**Destructive:** wipes only this Compose project's named lab volumes, including store orders and supplier products. Do not use this command in a Compose project with any real data.
+
+## Source layout
+
+- `apps/api/`: Hono/Node, JWT, SQLite, Swagger and OWASP scenarios
+- `apps/storefront/`: React Customer/Admin interfaces
+- `services/supplier/`: independently persisted fictional supplier
+- `services/internal-target/`: no-external-access SSRF target
+- `services/resource-monitor/`: live resource observations
+- `database/`: seeded fictional business state
+- `scripts/smoke.mjs`: HTTP exploitation/regression suite
+
+## Verification limits
+
+Unit and database tests run locally without npm dependencies. Full TypeScript builds, actual Docker deployment, browser XSS execution, and end-to-end exploits still require a successful CI execution. Incomplete or queued workflows do **not** certify any of these.
