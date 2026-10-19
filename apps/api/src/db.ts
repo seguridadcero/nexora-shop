@@ -33,6 +33,15 @@ export function initialize(force = false) {
       db.exec('COMMIT');
     }catch(e){db.exec('ROLLBACK');throw e}
   }
+  // Deterministic merchandise for the API4 pagination lab; idempotent on existing volumes.
+  const catalogCount=(db.prepare('SELECT COUNT(*) AS n FROM products WHERE id BETWEEN 2000 AND 6999').get() as {n:number}).n;
+  if(catalogCount<4993){
+    const families=['Mechanical Keyboard','Wireless Mouse','USB-C Hub','Laptop Stand','Desk Lamp','Bluetooth Speaker','Webcam','USB-C Cable','Portable SSD','Ergonomic Chair','Monitor Arm','Travel Charger','Gaming Headset','Notebook Dock','Wireless Charger'];
+    const adjectives=['Compact','Pro','Essential','Premium','Studio','Everyday','Ultra','Classic','Portable','Smart'];
+    const insert=db.prepare('INSERT OR IGNORE INTO products(id,name,description,price_cents,stock,supplier_product_id,min_allowed_price_cents,is_limited_edition,max_per_customer,created_at,updated_at) VALUES(?,?,?,?,?,NULL,NULL,0,NULL,?,?)');
+    db.exec('BEGIN IMMEDIATE');
+    try{for(let i=0;i<4993;i++){const family=families[i%families.length],variant=adjectives[Math.floor(i/families.length)%adjectives.length];insert.run(2000+i,variant+' '+family+' '+String(i+1).padStart(4,'0'),'Nexora '+family.toLowerCase()+' for everyday work. Model '+String(i+1).padStart(4,'0')+'.',1499+(i*173)%175000,5+(i*7)%80,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')}db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
+  }
   ensureDemoPayments(db);
   return db;
 }
