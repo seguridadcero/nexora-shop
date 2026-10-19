@@ -16,5 +16,5 @@ export function labUpdateProduct(db:DatabaseSync,productId:number,fields:unknown
  for(const k of ['stock','price_cents'])if(k in d&&(typeof d[k]!=='number'||!Number.isSafeInteger(d[k])||Number(d[k])<0))return {status:422,error:'Invalid number'};
  for(const k of ['name','description'])if(k in d&&(typeof d[k]!=='string'||!(d[k] as string).trim()))return {status:422,error:'Invalid text'};
  db.prepare('UPDATE products SET '+keys.map(k=>k+'=?').join(',')+' WHERE id=?').run(...keys.map(k=>d[k] as string|number),productId);
- return {status:200,product:db.prepare('SELECT id,name,stock,price_cents FROM products WHERE id=?').get(productId)};
+ return {status:200,product:db.prepare('SELECT id,name,stock,price_cents,price_cents / 100.0 AS price FROM products WHERE id=?').get(productId)};
 }
