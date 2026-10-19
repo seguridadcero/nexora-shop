@@ -55,7 +55,7 @@ app.post('/api/v1/cart/items',async c=>{const a=authenticate(c);if(!a)return c.j
 app.patch('/api/v1/cart/items/:itemId',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=updateCartItem(db,a.id,id,await parseBody(c));return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
 app.delete('/api/v1/cart/items/:itemId',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=removeCartItem(db,a.id,id);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
 app.post('/api/v1/cart/checkout',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const r=checkoutCart(db,a.id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed',total_cents:r.total_cents}:{error:r.error},r.status as any)});
-const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer';
+const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer,image_path';
 app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'');return c.json(r.status===200?{products:r.products,diagnostics:r.diagnostics}:{error:r.error},r.status as any)});
 app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
 app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
@@ -66,7 +66,7 @@ app.post('/api/v1/products/:id/image/import',async c=>{
  const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product'},400);
  if(!db.prepare('SELECT id FROM products WHERE id=?').get(id))return c.json({error:'Product not found'},404);
  const body=await parseBody(c);if(!body||typeof body.url!=='string')return c.json({error:'Invalid image URL'},422);
- try{const result=await api7ImportImage(body.url);if(result.status===200)db.prepare('UPDATE products SET image_path=?,updated_at=? WHERE id=?').run(body.url,new Date().toISOString(),id);return c.json(result,result.status as any)}
+ try{const result=await api7ImportImage(body.url);if(result.status===200&&result.image_saved)db.prepare('UPDATE products SET image_path=?,updated_at=? WHERE id=?').run(body.url,new Date().toISOString(),id);return c.json(result,result.status as any)}
  catch{return c.json({error:'Upstream image fetch failed'},502)}
 });
 const supplierFeed=async():Promise<SupplierProduct[]>=>{
