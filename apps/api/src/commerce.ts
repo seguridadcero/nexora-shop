@@ -6,7 +6,7 @@ export function updateProduct(db:DatabaseSync,id:number,data:unknown,role:string
  if(!data||typeof data!=='object'||Array.isArray(data))return {status:422,error:'Invalid product'};
  const d=data as Record<string,unknown>, allowed=['name','description','price_cents','stock'], keys=Object.keys(d);
  if(!keys.length||keys.some(k=>!allowed.includes(k)))return {status:422,error:'Unsupported product property'};
- for(const k of ['stock','price_cents'])if(k in d&&(!Number.isSafeInteger(d[k])||Number(d[k])<0))return {status:422,error:'Invalid numeric property'};
+ for(const k of ['stock','price_cents'])if(k in d&&(typeof d[k]!=='number'||!Number.isSafeInteger(d[k])||Number(d[k])<0))return {status:422,error:'Invalid numeric property'};
  for(const k of ['name','description'])if(k in d&&(typeof d[k]!=='string'||!(d[k] as string).trim()||(d[k] as string).length>4000))return {status:422,error:'Invalid text'};
  db.prepare('UPDATE products SET '+keys.map(k=>k+'=?').join(',')+',updated_at=? WHERE id=?').run(...keys.map(k=>d[k] as string|number),new Date().toISOString(),id);
  return {status:200,product:db.prepare('SELECT id,name,description,price_cents,stock FROM products WHERE id=?').get(id)};
