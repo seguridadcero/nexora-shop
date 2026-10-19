@@ -1,0 +1,52 @@
+import {Hono} from 'hono';
+import {serve} from '@hono/node-server';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {initialize} from './db.js';
+import {issueToken,verifyToken,validatePassword,ensureDemoPasswords} from './security.js';
+import {openApiSpec} from './openapi.js';
+import {updateProduct,buyOne} from './commerce.js';
+const db=initialize();ensureDemoPasswords(db);const app=new Hono();
+const req=createRequire(import.meta.url);const swaggerRoot=req.resolve('swagger-ui-dist/package.json').replace(/package\.json$/,'');
+const authenticate=(c:any)=>verifyToken(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');
+const parseId=(v:string)=>/^[1-9]\d*$/.test(v)&&Number.isSafeInteger(Number(v))?Number(v):null;
+const parseBody=async(c:any)=>{try{return await c.req.json()}catch{return null}};
+app.get('/api/health',c=>c.json({status:'ok',application:'Nexora Shop'}));
+app.get('/api/openapi.json',c=>c.json(openApiSpec));
+app.get('/api/docs',c=>c.html('<!doctype html><html><head><title>Nexora Shop API</title><link rel="stylesheet" href="/api/docs/swagger-ui.css"></head><body><div id="swagger-ui"></div><script src="/api/docs/swagger-ui-bundle.js"></script><script>SwaggerUIBundle({url:"/api/openapi.json",dom_id:"#swagger-ui"})</script></body></html>'));
+for(const asset of ['swagger-ui.css','swagger-ui-bundle.js'])app.get('/api/docs/'+asset,c=>{c.header('Content-Type',asset.endsWith('.css')?'text/css':'application/javascript');return c.body(new Uint8Array(readFileSync(swaggerRoot+asset)))});
+app.post('/api/v1/auth/login',async c=>{
+ const b=await parseBody(c);if(!b||typeof b.email!=='string'||typeof b.password!=='string')return c.json({error:'Invalid credentials'},401);
+ const u=db.prepare('SELECT id,email,display_name,role,password_hash FROM users WHERE email=?').get(b.email.toLowerCase()) as any;
+ if(!u||!validatePassword(b.password,u.password_hash))return c.json({error:'Invalid credentials'},401);
+ return c.json({access_token:issueToken({sub:String(u.id),role:u.role}),token_type:'Bearer',expires_in:3600,user:{id:u.id,email:u.email,display_name:u.display_name,role:u.role}});
+});
+app.get('/api/v1/account',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const user=db.prepare('SELECT id,email,display_name,role FROM users WHERE id=?').get(a.id);return user?c.json({user}):c.json({error:'Unauthorized'},401)});
+app.get('/api/v1/account/orders',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({orders:db.prepare('SELECT id,status,total_cents,created_at FROM orders WHERE customer_id=? ORDER BY id').all(a.id)})});
+app.get('/api/v1/orders/:id',c=>{
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid order identifier'},400);
+ const order=db.prepare('SELECT id,customer_id,status,total_cents,created_at FROM orders WHERE id=? AND customer_id=?').get(id,a.id);
+ return order?c.json({order:{...order,items:db.prepare('SELECT id,product_id,quantity,unit_price_cents FROM order_items WHERE order_id=?').all(id)}}):c.json({error:'Order not found'},404);
+});
+app.patch('/api/v1/orders/:id/items/:itemId',async c=>{
+ const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);
+ const id=parseId(c.req.param('id')),itemId=parseId(c.req.param('itemId'));if(id===null||itemId===null)return c.json({error:'Invalid identifier'},400);
+ const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.quantity)||body.quantity<1||body.quantity>100)return c.json({error:'Invalid quantity or property'},422);
+ const order=db.prepare('SELECT id,status FROM orders WHERE id=? AND customer_id=?').get(id,a.id) as {status:string}|undefined;
+ if(!order)return c.json({error:'Order not found'},404);if(order.status!=='draft')return c.json({error:'Order not editable'},409);
+ if(!db.prepare('SELECT id FROM order_items WHERE id=? AND order_id=?').get(itemId,id))return c.json({error:'Item not found'},404);
+ db.exec('BEGIN IMMEDIATE');
+ try{
+ db.prepare('UPDATE order_items SET quantity=? WHERE id=? AND order_id=?').run(body.quantity,itemId,id);
+ const total=(db.prepare('SELECT SUM(quantity*unit_price_cents) AS total FROM order_items WHERE order_id=?').get(id) as {total:number}).total;
+ db.prepare('UPDATE orders SET total_cents=? WHERE id=?').run(total,id);db.exec('COMMIT');return c.json({order_id:id,item_id:itemId,quantity:body.quantity,total_cents:total});
+ }catch(e){db.exec('ROLLBACK');throw e}
+});
+const fields='id,name,description,price_cents,stock,is_limited_edition,max_per_customer';
+app.get('/api/v1/products',c=>c.json({products:db.prepare('SELECT '+fields+' FROM products ORDER BY id').all()}));
+app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product}):c.json({error:'Product not found'},404)});
+app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=updateProduct(db,id,await parseBody(c),a.role);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
+app.post('/api/v1/purchases',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='customer')return c.json({error:'Customer role required'},403);const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.product_id))return c.json({error:'Invalid product'},422);const r=buyOne(db,a.id,body.product_id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed'}:{error:r.error},r.status as any)});
+app.onError((e,c)=>{console.error(e);return c.json({error:'Internal server error'},500)});
+app.notFound(c=>c.json({error:'Not found'},404));
+serve({fetch:app.fetch,port:Number(process.env.PORT??3000)});
