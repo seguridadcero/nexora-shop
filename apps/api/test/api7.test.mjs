@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {api7ImportImage} from '../src/api7.ts';
+test('API7 requests Docker-internal destination',async()=>{let seen='';const fake=async url=>{seen=url;return {status:200,text:async()=>'{"token":"FAKE-TRAINING-DATA"}'}};const r=await api7ImportImage('http://internal-target:3030/internal/marker',fake);assert.equal(r.status,200);assert.equal(seen,'http://internal-target:3030/internal/marker');assert.match(r.preview,/FAKE-TRAINING/)});
+test('API7 rejects non-HTTP protocols',async()=>{assert.equal((await api7ImportImage('file:///etc/passwd')).status,422)});
