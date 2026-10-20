@@ -12,10 +12,10 @@ docker compose up --build -d --wait
 
 | Component | URL | Purpose |
 |---|---|---|
-| Nexora Storefront | http://127.0.0.1:8080 | Customer and Admin UI |
-| Swagger UI | http://127.0.0.1:8080/api/docs | Legitimate API contract |
-| Supplier Panel | http://127.0.0.1:8081/supplier/panel | Edit fictional supplier records |
-| Resource Monitor | http://127.0.0.1:8082 | Real CPU %, RAM MB and API latency ms |
+| Nexora Storefront | http://127.0.0.1:8090 | Customer and Admin UI |
+| Swagger UI | http://127.0.0.1:8090/api/docs | Legitimate API contract |
+| Supplier Panel | http://127.0.0.1:8091/supplier/panel | Edit fictional supplier records |
+| Resource Monitor | http://127.0.0.1:8092 | Real CPU %, RAM MB and API latency ms |
 
 The API, supplier, and internal SSRF target communicate through a private Docker network. Host-facing ports bind to `127.0.0.1` only. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
 
