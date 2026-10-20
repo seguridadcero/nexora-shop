@@ -43,10 +43,10 @@ jobs:
       - name: HTTP smoke tests
         run: |
           set -euo pipefail
-          curl -fsS http://127.0.0.1:8080/api/health
-          curl -fsS http://127.0.0.1:8080/api/v1/products
-          curl -fsS http://127.0.0.1:8080/api/openapi.json -o /tmp/nexora-openapi.json
-          curl -fsS http://127.0.0.1:8080/api/docs -o /tmp/nexora-swagger.html
+          curl -fsS http://127.0.0.1:8090/api/health
+          curl -fsS http://127.0.0.1:8090/api/v1/products
+          curl -fsS http://127.0.0.1:8090/api/openapi.json -o /tmp/nexora-openapi.json
+          curl -fsS http://127.0.0.1:8090/api/docs -o /tmp/nexora-swagger.html
       - name: Verify ten OWASP API lab scenarios over HTTP
         run: node scripts/smoke.mjs
       - name: Controlled API4 load assessment
