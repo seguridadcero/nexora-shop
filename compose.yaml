@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: apps/storefront/Dockerfile
-    ports: ['127.0.0.1:8080:80']
+    ports: ['127.0.0.1:8090:80']
     depends_on:
       api: {condition: service_healthy}
     networks: [lab,edge]
@@ -41,7 +41,7 @@ services:
     build:
       context: .
       dockerfile: services/resource-monitor/Dockerfile
-    ports: ['127.0.0.1:8082:3010']
+    ports: ['127.0.0.1:8092:3010']
     networks: [lab,edge]
     depends_on:
       api: {condition: service_healthy}
@@ -61,7 +61,7 @@ services:
     environment:
       SUPPLIER_DB: /data/products.json
     volumes: [supplier_data:/data]
-    ports: ['127.0.0.1:8081:3001']
+    ports: ['127.0.0.1:8091:3001']
     networks: [lab,edge]
     restart: unless-stopped
     mem_limit: 128m
