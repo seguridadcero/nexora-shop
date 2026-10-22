@@ -30,7 +30,7 @@ function normalizeOrderDetail(value:OrderDetail):OrderDetail {
 }
 function normalizeSupplier(value:SyncItem):SyncItem{return {...value,price:validPrice(value?.price,'supplier product')}}
 
-const money=(value:string|number)=>String.fromCharCode(36)+validPrice(value,'monetary field');
+const money=(value:string|number)=>typeof value==='string'&&usdPattern.test(value)&&Number.isFinite(Number(value))?String.fromCharCode(36)+value:'Price unavailable';
 type GuestLine={product_id:number;quantity:number};
 const guestKey='nexora-guest-cart-v1';
 function readGuest():GuestLine[]{try{const data=JSON.parse(localStorage.getItem(guestKey)??'[]');return Array.isArray(data)?data.filter(x=>Number.isSafeInteger(x.product_id)&&Number.isSafeInteger(x.quantity)&&x.quantity>=1&&x.quantity<=100):[]}catch{return []}}
