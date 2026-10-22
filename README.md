@@ -35,7 +35,7 @@ No real payments or purchases take place.
 | OWASP 2023 | Intended scenario |
 |---|---|
 | API1 | Alice obtains Bob's order by changing ID |
-| API2 | Only GET /api/v1/account fails to validate the JWT signature |
+| API2 | Only GET /api/v1/account/orders deliberately accepts a tampered JWT subject; GET /api/v1/account verifies the signature |
 | API3 | Draft order mass assignment changes unit_price_cents |
 | API4 | Costly product searches without request/concurrency limits; independent monitor |
 | API5 | Customer edits Admin-only product stock |
