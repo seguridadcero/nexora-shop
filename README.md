@@ -30,6 +30,10 @@ The API, supplier, internal SSRF target, monitor and Nginx run as separate proce
 
 No real payments or purchases take place.
 
+## Checkout flow
+
+The Cart page presents items, a payment method and a single **Place order** action. `POST /api/v1/cart/checkout` creates the confirmed order and its simulated payment within one SQLite transaction; the response includes the order ID, final decimal USD display amount and masked payment receipt. The storefront then renders **Thank you for your order** from that response without fetching the catalog or order history. **View my orders** and **Continue shopping** fetch data only when selected. API03 intentionally remains demonstrable by injecting `unit_price` into the checkout line item in an authorized local lab.
+
 ## Lab coverage
 
 | OWASP 2023 | Intended scenario |
