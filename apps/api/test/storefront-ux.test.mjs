@@ -8,3 +8,5 @@ test('guest can add limited-edition first unit without authentication',()=>{asse
 test('guest limited item stays visible and sign-in merges cart',()=>{assert.match(src,/\.\.\.catalogProducts,\.\.\.searchResults/);assert.match(src,/for\(const item of guestCart\)/);assert.match(src,/setGuestCart\(\[\]\)/);});
 
 test('header badge counts guest cart lines without relying on catalog product hydration',()=>{assert.match(src,/const cartBadgeCount=account\?\.role==='customer'\?\(cart\?\.items\.reduce/);assert.match(src,/guestCart\.reduce\(\(n,i\)=>n\+i\.quantity,0\)/);assert.match(src,/🛒 Cart \(\{cartBadgeCount\}\)/);});
+
+test('authenticated cart reload and guest subtotal use hydrated state',()=>{assert.match(src,/fetch\('\/api\/v1\/cart',\{headers:\{Authorization:'Bearer '\+token\},cache:'no-store'\}\)/);assert.match(src,/setCartLoading\(true\)/);assert.match(src,/const p=\[\.\.\.products,\.\.\.catalogProducts,\.\.\.searchResults\]\.find/);});
