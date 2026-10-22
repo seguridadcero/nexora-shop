@@ -6,3 +6,5 @@ test('guest checkout requires sign in instead of confirming an order',()=>{asser
 
 test('guest can add limited-edition first unit without authentication',()=>{assert.match(src,/async function addCart\(id:number,quantity=1\)\{if\(!account\)\{addGuest\(id,quantity\);return\}/);assert.match(src,/function addGuest\(id:number,quantity:number\)/);assert.match(src,/current\+quantity>p\.max_per_customer/);assert.match(src,/setGuestCart\(prev=>/);assert.match(src,/navigate\('\/cart'\)/);});
 test('guest limited item stays visible and sign-in merges cart',()=>{assert.match(src,/\.\.\.catalogProducts,\.\.\.searchResults/);assert.match(src,/for\(const item of guestCart\)/);assert.match(src,/setGuestCart\(\[\]\)/);});
+
+test('header badge counts guest cart lines without relying on catalog product hydration',()=>{assert.match(src,/const cartBadgeCount=account\?\.role==='customer'\?\(cart\?\.items\.reduce/);assert.match(src,/guestCart\.reduce\(\(n,i\)=>n\+i\.quantity,0\)/);assert.match(src,/🛒 Cart \(\{cartBadgeCount\}\)/);});
