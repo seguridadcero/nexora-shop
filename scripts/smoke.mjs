@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 const base=process.env.NEXORA_BASE??'http://127.0.0.1:8090';
-const supplier=process.env.NEXORA_SUPPLIER??base;
-const monitor=process.env.NEXORA_MONITOR??(base+'/monitor');
+const supplier=process.env.NEXORA_SUPPLIER??'http://127.0.0.1:8091';
+const monitor=process.env.NEXORA_MONITOR??'http://127.0.0.1:8092';
 async function request(path,{method='GET',token,body,origin=base,auth}={}){
  const headers={};if(token)headers.authorization='Bearer '+token;if(body!==undefined)headers['content-type']='application/json';if(auth)headers.authorization='Basic '+Buffer.from(auth).toString('base64');
  const r=await fetch(origin+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});
