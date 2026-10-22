@@ -1,7 +1,7 @@
 // Controlled API4 validation on the local, isolated Nexora Shop stack.
 // Baseline requests 10 products; test requests 1000. Maximum concurrency: 4.
 const base=process.env.NEXORA_BASE??'http://127.0.0.1:8090';
-const monitor=process.env.NEXORA_MONITOR??'http://127.0.0.1:8092';
+const monitor=process.env.NEXORA_MONITOR??(base+'/monitor');
 async function stats(){const r=await fetch(monitor+'/metrics',{signal:AbortSignal.timeout(5000)});if(!r.ok)throw Error('Monitor unavailable: '+r.status);return r.json()}
 async function listing(limit){const begin=performance.now();const r=await fetch(base+'/api/v1/products?limit='+limit,{signal:AbortSignal.timeout(25000)});if(!r.ok)throw Error('Catalog request failed: '+r.status);const body=await r.text();const result=JSON.parse(body);if(result.products.length!==limit)throw Error('Expected '+limit+' products, got '+result.products.length);return {duration_ms:Math.round(performance.now()-begin),bytes:Buffer.byteLength(body)}}
 try{
