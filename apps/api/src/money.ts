@@ -14,16 +14,16 @@ export function publicProduct(product:any){
 export function publicCart(cart:any){
  const {items,total_cents,total_display,...fields}=cart;
  return {...fields,total:usd(total_cents),items:items.map((item:any)=>{
-  const {unit_price_cents,unit_price_display,...itemFields}=item;
-  return {...itemFields,unit_price:usd(unit_price_cents)};
+  const {unit_price_cents,unit_price_display,unit_price,...itemFields}=item;
+  return {...itemFields,price:usd(unit_price_cents)};
  })};
 }
 export function publicOrder(order:any){
  const {total_cents,total_display,items,...fields}=order;
  const formatted:any={...fields,total:usd(total_cents)};
  if(items)formatted.items=items.map((item:any)=>{
-  const {unit_price_cents,...itemFields}=item;
-  return {...itemFields,unit_price:usd(unit_price_cents)};
+  const {unit_price_cents,unit_price,...itemFields}=item;
+  return {...itemFields,price:usd(unit_price_cents)};
  });
  return formatted;
 }
