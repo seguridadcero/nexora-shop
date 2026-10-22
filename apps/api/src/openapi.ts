@@ -21,6 +21,3 @@ export const openApiSpec = {
     '/api/v1/products/{id}':{patch:{tags:['Products'],summary:'Admin update product',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'integer'}}],requestBody:{required:true,content:{'application/json':{schema:{type:'object',properties:{stock:{type:'integer',minimum:0},price:{type:'string',pattern:'^[0-9]+\\.[0-9]{2}$',example:'39.00'},name:{type:'string'},description:{type:'string'}}}}}},responses:{'200':{description:'Updated'},'403':{description:'Forbidden'}}},get:{tags:['Products'],summary:'Get product',parameters:[{name:'id',in:'path',required:true,schema:{type:'integer'}}],responses:{'200':{description:'Product'},'404':{description:'Not found'}}}}
   }
 } as const;
-,example:'39.00'},name:{type:'string'},description:{type:'string'}}}}}},responses:{'200':{description:'Updated'},'403':{description:'Forbidden'}}},get:{tags:['Products'],summary:'Get product',parameters:[{name:'id',in:'path',required:true,schema:{type:'integer'}}],responses:{'200':{description:'Product'},'404':{description:'Not found'}}}}
-  }
-} as const;
