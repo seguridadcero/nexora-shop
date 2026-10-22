@@ -38,3 +38,9 @@ main{padding-top:30px;padding-bottom:68px;min-height:76vh}
 .admin-product-search input{flex:1 1 280px;min-width:180px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}
 .admin-product-search button{padding:12px 18px}
 .admin-header-label{font-size:0.75rem;letter-spacing:.12em;font-weight:700;opacity:.7}
+
+/* Override legacy .panel form layout for the admin catalog toolbar. */
+.panel form.admin-product-search{display:flex;flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap;max-width:none;width:100%;margin:20px 0}
+.panel form.admin-product-search input{flex:1 1 260px;width:auto;min-width:200px;height:44px;min-height:44px;padding:10px 14px}
+.panel form.admin-product-search button{flex:0 0 auto;min-height:44px;margin:0}
+@media(max-width:540px){.panel form.admin-product-search input{flex-basis:100%}}
