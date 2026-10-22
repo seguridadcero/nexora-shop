@@ -51,6 +51,7 @@ app.get('/api/v1/orders/:id',c=>{
  const order=labReadOrder(db,id,a.id);
  return order?c.json({order:publicOrder(order)}):c.json({error:'Order not found'},404);
 });
+app.get('/api/v1/account/limited-purchases',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const rows=db.prepare("SELECT oi.product_id,SUM(oi.quantity) AS purchased FROM order_items oi JOIN orders o ON o.id=oi.order_id JOIN products p ON p.id=oi.product_id WHERE o.customer_id=? AND o.status='confirmed' AND p.is_limited_edition=1 GROUP BY oi.product_id").all(a.id) as Array<{product_id:number;purchased:number}>;return c.json({purchases:rows})});
 app.get('/api/v1/cart',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({cart:publicCart(getCart(db,a.id))})});
 app.post('/api/v1/cart/items',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const b=await parseBody(c);const r=addToCart(db,a.id,b?.product_id,b?.quantity??1);return c.json(r.status===200?{cart:publicCart(r.cart)}:{error:r.error},r.status as any)});
 app.patch('/api/v1/cart/items/:itemId',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=updateCartItem(db,a.id,id,await parseBody(c));return c.json(r.status===200?{cart:publicCart(r.cart)}:{error:r.error},r.status as any)});
