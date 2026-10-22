@@ -74,9 +74,9 @@ app.post('/api/v1/products/:id/image/import',async c=>{
 const supplierFeed=async():Promise<SupplierProduct[]>=>{
  const response=await fetch('http://supplier:3001/supplier/feed/products',{signal:AbortSignal.timeout(5000)});
  if(!response.ok)throw new Error('Supplier API unavailable');
- const value=await response.json() as {products:SupplierProduct[]};
+ const value=await response.json() as {products:Array<Omit<SupplierProduct,'price_cents'>&{price:string}>};
  if(!Array.isArray(value.products))throw new Error('Invalid supplier feed');
- return value.products;
+ return value.products.map(p=>{const cents=centsFromUsd(p.price);if(cents===null)throw new Error('Invalid supplier price');const {price,...details}=p;return {...details,price_cents:cents}});
 };
 app.get('/api/v1/admin/integrations',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
