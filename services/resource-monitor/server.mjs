@@ -12,4 +12,4 @@ createServer(async(req,res)=>{
  if(req.url==='/metrics'){try{const v=await sample();res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(v))}catch{res.writeHead(503);return res.end('Unavailable')}}
  if(req.url==='/events'){res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});let working=false;const send=async()=>{if(working)return;working=true;try{res.write('data: '+JSON.stringify(await sample())+'\n\n')}catch{res.write(': waiting for api\n\n')}finally{working=false}};void send();const interval=setInterval(()=>void send(),1000);req.on('close',()=>clearInterval(interval));return}
  res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(page);
-}).listen(3010,'0.0.0.0');
+}).listen(8092,'0.0.0.0');
