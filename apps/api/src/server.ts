@@ -9,7 +9,6 @@ import {openApiSpec} from './openapi.js';
 import {updateProduct,buyOne} from './commerce.js';
 import {labReadOrder,labUpdateProduct} from './labs.js';
 import {api2UnsafeJwtSubject} from './api2.js';
-import {usd,asProduct,asCart,asOrder,asSupplier,toCents} from './money.js';
 import {getCart,addToCart,updateCartItem,removeCartItem,checkoutCart} from './cart.js';
 import {api6BuyOne} from './api6.js';
 import {api9LegacyOrders} from './api9.js';
@@ -45,23 +44,25 @@ app.get('/api/v1/account/payment-methods',c=>{const a=authenticate(c);if(!a)retu
 app.get('/api/v1/account/profile',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const profile=db.prepare('SELECT id,email,display_name,role,created_at FROM users WHERE id=?').get(a.id);return c.json({profile})});
 app.get('/api/v1/account/orders/:id/payment',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);return c.json({payment:getOrderPayment(db,a.id,id)})});
 app.post('/api/v1/account/orders/:id/payment',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));const body=await parseBody(c);if(id===null||!Number.isSafeInteger(body?.payment_method_id))return c.json({error:'Invalid payment selection'},400);const r=payForOrder(db,a.id,id,body.payment_method_id);return c.json(r.status===200?{payment:r.payment}:{error:r.error},r.status as any)});
-app.get('/api/v1/account/orders',c=>{const id=api2UnsafeJwtSubject(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');if(id===null)return c.json({error:'Unauthorized'},401);return c.json({orders:(db.prepare('SELECT id,status,total_cents,total_cents / 100.0 AS total,created_at FROM orders WHERE customer_id=? AND status=\'confirmed\' ORDER BY id').all(id) as any[]).map(asOrder)})});
+app.get('/api/v1/account/orders',c=>{const id=api2UnsafeJwtSubject(/^Bearer\s+(.+)$/i.exec(c.req.header('authorization')??'')?.[1]??'');if(id===null)return c.json({error:'Unauthorized'},401);return c.json({orders:(db.prepare('SELECT id,status,total_cents,total_cents / 100.0 AS total,created_at FROM orders WHERE customer_id=? AND status=\'confirmed\' ORDER BY id').all(id) as any[]).map(o=>({...o,total_display:(o.total_cents/100).toFixed(2)}))})});
 app.get('/api/v1/orders/:id',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json(api8InvalidOrderError(db,c.req.param('id')),500);
  const order=labReadOrder(db,id,a.id);
- return order?c.json({order:asOrder(order)}):c.json({error:'Order not found'},404);
+ return order?c.json({order}):c.json({error:'Order not found'},404);
 });
-app.get('/api/v1/cart',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({cart:asCart(getCart(db,a.id))})});
-app.post('/api/v1/cart/items',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const b=await parseBody(c);const r=addToCart(db,a.id,b?.product_id,b?.quantity??1);return c.json(r.status===200?{cart:asCart(r.cart)}:{error:r.error},r.status as any)});
-app.patch('/api/v1/cart/items/:itemId',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=updateCartItem(db,a.id,id,await parseBody(c));return c.json(r.status===200?{cart:asCart(r.cart)}:{error:r.error},r.status as any)});
-app.delete('/api/v1/cart/items/:itemId',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=removeCartItem(db,a.id,id);return c.json(r.status===200?{cart:asCart(r.cart)}:{error:r.error},r.status as any)});
-app.post('/api/v1/cart/checkout',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const body=await parseBody(c);const r=checkoutCart(db,a.id,body??undefined);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed',total:usd(r.total_cents!),payment:r.payment}:{error:r.error},r.status as any)});
+app.get('/api/v1/cart',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({cart:getCart(db,a.id)})});
+app.post('/api/v1/cart/items',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const b=await parseBody(c);const r=addToCart(db,a.id,b?.product_id,b?.quantity??1);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
+app.patch('/api/v1/cart/items/:itemId',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=updateCartItem(db,a.id,id,await parseBody(c));return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
+app.delete('/api/v1/cart/items/:itemId',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('itemId'));if(id===null)return c.json({error:'Invalid item ID'},400);const r=removeCartItem(db,a.id,id);return c.json(r.status===200?{cart:r.cart}:{error:r.error},r.status as any)});
+app.post('/api/v1/cart/checkout',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const body=await parseBody(c);const r=checkoutCart(db,a.id,body??undefined);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed',total_cents:r.total_cents,total_display:(r.total_cents!/100).toFixed(2),payment:r.payment}:{error:r.error},r.status as any)});
+const moneyText=(cents:number)=>(cents/100).toFixed(2);
+const formattedProduct=(p:any)=>({...p,price_display:moneyText(p.price_cents)});
 const fields='id,name,description,price_cents,price_cents / 100.0 AS price,stock,is_limited_edition,max_per_customer,image_path';
-app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'',c.req.query('limit'),c.req.query('offset'));if(!('products' in r))return c.json({error:r.error},422);return c.json({...r,products:r.products.map(asProduct)})});
-app.get('/api/v1/products',c=>{const r=api4List(db,c.req.query('limit'),c.req.query('offset'));if(!('products' in r))return c.json({error:r.error},422);return c.json({...r,products:r.products.map(asProduct)})});
-app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product:asProduct(product)}):c.json({error:'Product not found'},404)});
+app.get('/api/v1/products/search',c=>{const r=api4Search(db,c.req.query('q')??'',c.req.query('limit'),c.req.query('offset'));if(!('products' in r))return c.json({error:r.error},422);return c.json({...r,products:r.products.map(formattedProduct)})});
+app.get('/api/v1/products',c=>{const r=api4List(db,c.req.query('limit'),c.req.query('offset'));if(!('products' in r))return c.json({error:r.error},422);return c.json({...r,products:r.products.map(formattedProduct)})});
+app.get('/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid product ID'},400);const product=db.prepare('SELECT '+fields+' FROM products WHERE id=?').get(id);return product?c.json({product:formattedProduct(product)}):c.json({error:'Product not found'},404)});
 app.on('OPTIONS','/api/v1/products/:id',c=>{const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);return c.body(null,204,{'Allow':'GET, HEAD, PATCH, OPTIONS'});});
-app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const data=await parseBody(c);if(data&&typeof data==='object'&&!Array.isArray(data)&&'price' in data){const cents=toCents(data.price);if(cents===null)return c.json({error:'Invalid price'},422);data.price_cents=cents;delete data.price}const r=labUpdateProduct(db,id,data,a.id);return c.json(r.status===200?{product:asProduct(r.product)}:{error:r.error},r.status as any)});
+app.patch('/api/v1/products/:id',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const id=parseId(c.req.param('id'));if(id===null)return c.json({error:'Invalid ID'},400);const r=labUpdateProduct(db,id,await parseBody(c),a.id);return c.json(r.status===200?{product:r.product}:{error:r.error},r.status as any)});
 app.post('/api/v1/purchases',async c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='customer')return c.json({error:'Customer role required'},403);const body=await parseBody(c);if(!body||Object.keys(body).length!==1||!Number.isSafeInteger(body.product_id))return c.json({error:'Invalid product'},422);const r=api6BuyOne(db,a.id,body.product_id);return c.json(r.status===201?{order_id:r.order_id,status:'confirmed'}:{error:r.error},r.status as any)});
 app.post('/api/v1/products/:id/image/import',async c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
@@ -74,9 +75,9 @@ app.post('/api/v1/products/:id/image/import',async c=>{
 const supplierFeed=async():Promise<SupplierProduct[]>=>{
  const response=await fetch('http://supplier:3001/supplier/feed/products',{signal:AbortSignal.timeout(5000)});
  if(!response.ok)throw new Error('Supplier API unavailable');
- const value=await response.json() as {products:Array<Omit<SupplierProduct,'price_cents'>&{price:string}>};
+ const value=await response.json() as {products:SupplierProduct[]};
  if(!Array.isArray(value.products))throw new Error('Invalid supplier feed');
- return value.products.map(p=>{const cents=toCents(p.price);if(cents===null)throw new Error('Invalid supplier price');const {price,...fields}=p;return {...fields,price_cents:cents}});
+ return value.products;
 };
 app.get('/api/v1/admin/integrations',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
@@ -84,14 +85,14 @@ app.get('/api/v1/admin/integrations',c=>{
 });
 app.get('/api/v1/admin/integrations/supplier/pending',async c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
- try{const feed=await supplierFeed();return c.json({pending:pendingSupplierProducts(db,feed).map(asSupplier)})}catch{return c.json({error:'Supplier unavailable'},502)}
+ try{const feed=await supplierFeed();return c.json({pending:pendingSupplierProducts(db,feed)})}catch{return c.json({error:'Supplier unavailable'},502)}
 });
 app.post('/api/v1/admin/integrations/supplier/sync',async c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
- try{const feed=await supplierFeed();const result=importSupplierProducts(db,feed);return c.json({...result,details:result.details.map(asSupplier)})}catch{return c.json({error:'Supplier sync failed'},502)}
+ try{const feed=await supplierFeed();return c.json(importSupplierProducts(db,feed))}catch{return c.json({error:'Supplier sync failed'},502)}
 });
 // API9 laboratory: v2 route is not registered under the v1 authentication rules.
-app.get('/api/v2/orders',c=>c.json({orders:api9LegacyOrders(db).map(asOrder),experimental:true}));
+app.get('/api/v2/orders',c=>c.json({orders:api9LegacyOrders(db),experimental:true}));
 app.onError((e,c)=>{console.error(e);return c.json({error:'Internal server error'},500)});
 app.notFound(c=>c.json({error:'Not found'},404));
 serve({fetch:app.fetch,port:Number(process.env.PORT??3000)});
