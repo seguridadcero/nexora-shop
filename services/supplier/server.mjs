@@ -27,4 +27,4 @@ createServer(async(req,res)=>{
  p.price_cents=cents;p.description=data.description;p.version++;p.updated_at=new Date().toISOString();writeFileSync(file,JSON.stringify(products,null,2));return send(res,200,{product:publicProduct(p)});
  }
  return send(res,404,{error:'Not found'});
-}).listen(3001,'0.0.0.0',()=>console.log('Supplier service ready'));
+}).listen(8091,'0.0.0.0',()=>console.log('Supplier service ready'));
