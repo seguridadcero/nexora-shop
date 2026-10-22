@@ -73,7 +73,7 @@ app.post('/api/v1/products/:id/image/import',async c=>{
  catch{return c.json({error:'Upstream image fetch failed'},502)}
 });
 const supplierFeed=async():Promise<SupplierProduct[]>=>{
- const response=await fetch('http://supplier:3001/supplier/feed/products',{signal:AbortSignal.timeout(5000)});
+ const response=await fetch('http://supplier:8091/supplier/feed/products',{signal:AbortSignal.timeout(5000)});
  if(!response.ok)throw new Error('Supplier API unavailable');
  const value=await response.json() as {products:Array<Omit<SupplierProduct,'price_cents'>&{price:string}>};
  if(!Array.isArray(value.products))throw new Error('Invalid supplier feed');
