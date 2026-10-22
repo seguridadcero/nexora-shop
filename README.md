@@ -14,10 +14,10 @@ docker compose up --build -d --wait
 |---|---|---|
 | Nexora Storefront | http://127.0.0.1:8090 | Customer and Admin UI |
 | Swagger UI | http://127.0.0.1:8090/api/docs | Legitimate API contract |
-| Supplier Panel | http://127.0.0.1:8090/supplier/panel | Edit fictional supplier records |
-| Resource Monitor | http://127.0.0.1:8090/monitor | Real CPU %, RAM MB and API latency ms |
+| Supplier Panel | http://127.0.0.1:8091/supplier/panel | Edit fictional supplier records |
+| Resource Monitor | http://127.0.0.1:8092 | Real CPU %, RAM MB and API latency ms |
 
-The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. Only port 8090 is bound to host loopback. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
+The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. Three host-loopback ports are published from that one container: 8090 for the store, 8091 for the supplier, and 8092 for the monitor. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
 
 ### Fictional customer accounts
 
