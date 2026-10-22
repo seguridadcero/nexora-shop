@@ -21,6 +21,6 @@ COPY services ./services
 COPY docker/single/nginx.conf /etc/nginx/sites-available/default
 COPY docker/single/start.sh /usr/local/bin/nexora-start
 RUN chmod +x /usr/local/bin/nexora-start && mkdir -p /data /supplier-data && chown -R node:node /data /supplier-data
-EXPOSE 80
+EXPOSE 8090 8091 8092
 STOPSIGNAL SIGTERM
 CMD ["/usr/local/bin/nexora-start"]
