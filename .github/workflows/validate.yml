@@ -46,10 +46,10 @@ jobs:
           set -euo pipefail
           test "$(docker compose ps -q | wc -l)" -eq 1
           docker compose ps
-          curl -fsS http://127.0.0.1:8090/monitor/ -o /tmp/nexora-monitor.html
-          curl -fsS http://127.0.0.1:8090/monitor/metrics -o /tmp/nexora-metrics.json
-          curl -fsS http://127.0.0.1:8090/supplier/panel -o /tmp/nexora-supplier.html
-          curl -fsS http://127.0.0.1:8090/supplier/feed/products -o /tmp/nexora-supplier-feed.json
+          curl -fsS http://127.0.0.1:8092/ -o /tmp/nexora-monitor.html
+          curl -fsS http://127.0.0.1:8092/metrics -o /tmp/nexora-metrics.json
+          curl -fsS http://127.0.0.1:8091/supplier/panel -o /tmp/nexora-supplier.html
+          curl -fsS http://127.0.0.1:8091/supplier/feed/products -o /tmp/nexora-supplier-feed.json
       - name: HTTP smoke tests
         run: |
           set -euo pipefail
