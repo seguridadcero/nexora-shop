@@ -1,80 +1,25 @@
 services:
-  api:
+  nexora:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
-    environment:
-      NODE_ENV: production
-      DB_PATH: /data/nexora.db
-      PORT: '3000'
-      DEMO_ACCOUNTS: 'YES'
-      JWT_SECRET_FILE: /data/jwt-secret
-    volumes: [nexora_data:/data]
-    networks: [lab]
+      dockerfile: docker/single/Dockerfile
+    ports: ['127.0.0.1:8090:80']
+    volumes:
+      - nexora_data:/data
+      - supplier_data:/supplier-data
+    extra_hosts:
+      - 'internal-target:127.0.0.1'
+      - 'supplier:127.0.0.1'
     restart: unless-stopped
-    mem_limit: 384m
-    cpus: 1.0
+    mem_limit: 768m
+    cpus: 2.0
+    security_opt: ['no-new-privileges:true']
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
+      start_period: 60s
       retries: 8
-  web:
-    build:
-      context: .
-      dockerfile: apps/storefront/Dockerfile
-    ports: ['127.0.0.1:8090:80']
-    depends_on:
-      api: {condition: service_healthy}
-    networks: [lab,edge]
-    restart: unless-stopped
-  internal-target:
-    build:
-      context: .
-      dockerfile: services/internal-target/Dockerfile
-    networks: [lab]
-    read_only: true
-    security_opt: ['no-new-privileges:true']
-    mem_limit: 96m
-    cpus: 0.25
-  resource-monitor:
-    build:
-      context: .
-      dockerfile: services/resource-monitor/Dockerfile
-    ports: ['127.0.0.1:8092:3010']
-    networks: [lab,edge]
-    depends_on:
-      api: {condition: service_healthy}
-    read_only: true
-    security_opt: ['no-new-privileges:true']
-    mem_limit: 96m
-    cpus: 0.25
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3010/metrics').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 10s
-      timeout: 3s
-      retries: 8
-  supplier:
-    build:
-      context: .
-      dockerfile: services/supplier/Dockerfile
-    environment:
-      SUPPLIER_DB: /data/products.json
-    volumes: [supplier_data:/data]
-    ports: ['127.0.0.1:8091:3001']
-    networks: [lab,edge]
-    restart: unless-stopped
-    mem_limit: 128m
-    cpus: 0.25
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/supplier/feed/products').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 10s
-      timeout: 3s
-      retries: 8
-networks:
-  lab:
-    internal: true
-  edge: {}
 volumes:
   nexora_data: {}
   supplier_data: {}
