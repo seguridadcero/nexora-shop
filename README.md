@@ -1,6 +1,6 @@
 # Nexora Shop — OWASP API Security Top 10:2023 laboratory
 
-**Status: development / unverified Docker deployment.** This is an intentionally vulnerable fictional e-commerce application. Run it **only on an isolated local host**. Do not forward ports, expose a proxy publicly, or place real credentials or data in the lab.
+**Status: intentionally vulnerable training environment.** This is an intentionally vulnerable fictional e-commerce application. Run it **only on a controlled isolated training network**. Ports listen on all host interfaces; use a firewall or VM network restrictions to prevent unintended access. Do not forward ports to the Internet or use real credentials or data.
 
 ## Run locally
 
@@ -14,10 +14,10 @@ docker compose up --build -d --wait
 |---|---|---|
 | Nexora Storefront | http://127.0.0.1:8090 | Customer and Admin UI |
 | Swagger UI | http://127.0.0.1:8090/api/docs | Legitimate API contract |
-| Supplier Panel | http://127.0.0.1:8091/supplier/panel | Edit fictional supplier records |
+| Supplier Panel | http://127.0.0.1:8091/ | Edit fictional supplier records |
 | Resource Monitor | http://127.0.0.1:8092 | Real CPU %, RAM MB and API latency ms |
 
-The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. Three host-loopback ports are published from that one container: 8090 for the store, 8091 for the supplier, and 8092 for the monitor. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
+The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. Three ports are published on all host interfaces (0.0.0.0) from that one container: 8090 for the store, 8091 for the supplier, and 8092 for the monitor. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
 
 ### Fictional customer accounts
 
@@ -64,7 +64,7 @@ Once Docker is running, execute the HTTP regression:
 node scripts/smoke.mjs
 ```
 
-This test modifies **fictional** orders, stock and supplier prices; begin with reset fixtures. The GitHub Actions workflow also attempts these steps. No CI success has been confirmed yet, so do not treat the application as fully tested.
+This test modifies **fictional** orders, stock and supplier prices; begin with reset fixtures. The GitHub Actions workflow also attempts these steps. Check the current GitHub Actions run for the latest build and smoke-test results.
 
 ## Reset everything
 
