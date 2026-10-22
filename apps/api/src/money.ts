@@ -1,5 +1,5 @@
 // Public HTTP boundary: USD decimal strings. Internal storage/calculation: integer cents.
-export const usd=(cents:number):string=>(cents/100).toFixed(2);
+export function usd(cents:number):string{if(!Number.isSafeInteger(cents)||cents<0)throw new Error('Invalid monetary amount in database');return (cents/100).toFixed(2)}
 export function centsFromUsd(value:unknown):number|null {
  const s=typeof value==='number'?String(value):value;
  if(typeof s!=='string'||!/^\d+(?:\.\d{1,2})?$/.test(s))return null;
