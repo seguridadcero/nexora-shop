@@ -40,6 +40,16 @@ jobs:
         run: docker compose config --quiet
       - name: Run containers
         run: docker compose up --build -d --wait
+      - name: Verify single-container architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(docker compose ps -q | wc -l)" -eq 1
+          docker compose ps
+          curl -fsS http://127.0.0.1:8090/monitor/ -o /tmp/nexora-monitor.html
+          curl -fsS http://127.0.0.1:8090/monitor/metrics -o /tmp/nexora-metrics.json
+          curl -fsS http://127.0.0.1:8090/supplier/panel -o /tmp/nexora-supplier.html
+          curl -fsS http://127.0.0.1:8090/supplier/feed/products -o /tmp/nexora-supplier-feed.json
       - name: HTTP smoke tests
         run: |
           set -euo pipefail
