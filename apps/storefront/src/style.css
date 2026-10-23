@@ -248,3 +248,14 @@ main{padding-top:30px;padding-bottom:68px;min-height:76vh}
  .welcome-guide .guide-challenge-link{min-height:0}
  .welcome-guide .guide-all-challenges{width:100%}
 }
+
+
+/* Detailed challenge walkthroughs */
+.challenge-solution ul{padding-left:20px;color:#536b80}
+.challenge-solution li{margin-bottom:8px}
+.challenge-solution-steps{padding-left:23px}
+.challenge-solution-steps>li{padding-left:6px;margin:18px 0 24px;border-bottom:1px solid #e2eaf0;padding-bottom:15px}
+.challenge-solution-steps h5{font-size:15px;margin:0 0 6px;color:#183649}
+.challenge-solution pre{max-width:100%;overflow-x:auto;white-space:pre;padding:15px;background:#142a3c;color:#e0f4fb;border-radius:9px;font-size:12px;line-height:1.6}
+.challenge-solution pre code{font:inherit}
+.challenge-solution .challenge-expected{background:#ebf6f7;border-left:3px solid #0a8296;padding:11px 13px;border-radius:4px}
