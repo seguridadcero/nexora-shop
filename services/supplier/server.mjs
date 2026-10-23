@@ -11,7 +11,7 @@ const centsFromUsd=value=>{const s=typeof value==='number'?String(value):value;i
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data))};
 createServer(async(req,res)=>{
  const path=new URL(req.url,'http://supplier').pathname;
- if(req.method==='GET'&&path==='/'){res.writeHead(302,{Location:'/supplier/panel'});return res.end()}
+ if(req.method==='GET'&&path==='/'){res.writeHead(302,{Location:'/supplier/login'});return res.end()}
 
  if(req.method==='GET'&&path==='/supplier/feed/products')return send(res,200,{products:load().map(publicProduct)});
  if(req.method==='GET'&&path.startsWith('/supplier/feed/products/')){const p=load().find(x=>x.id===decodeURIComponent(path.split('/').pop()));return send(res,p?200:404,p?publicProduct(p):{error:'Not found'})}
