@@ -41,3 +41,5 @@ test('API10 stored XSS is restricted to supplier product details',()=>{
  assert.ok(src.slice(catalog,detail).includes('<p>{p.description}</p>'));
  assert.ok(src.slice(detail).includes('dangerouslySetInnerHTML={{__html:p.description}}'));
 });
+
+test('API10 Integrations displays imported descriptions as text while product detail remains vulnerable',()=>{assert.match(src,/<div className="product-description">\{p\.description\}<\/div><\/details>/);assert.equal([...src.matchAll(/dangerouslySetInnerHTML=\{\{__html:p\.description\}\}/g)].length,1);});
