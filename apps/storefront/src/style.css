@@ -225,3 +225,26 @@ main{padding-top:30px;padding-bottom:68px;min-height:76vh}
  .challenge-help button{width:100%}
  .welcome-guide .guide-challenge-description,.welcome-guide .guide-view{margin-left:0}
 }
+
+
+/* Landing-page card alignment and prominent primary actions */
+.welcome-guide .guide-three{align-items:stretch}
+.welcome-guide .guide-three>.guide-card{display:flex;flex-direction:column;min-height:242px}
+.welcome-guide .guide-three>.guide-card h3{margin-top:12px}
+.welcome-guide .guide-three>.guide-card p{flex:1;margin-bottom:16px}
+.welcome-guide .guide-access-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 15px;background:#087b91;color:white!important;border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:800;transition:background .15s ease}
+.welcome-guide .guide-access-button:hover{background:#075b70}
+.welcome-guide .guide-access-url{display:block;margin-top:9px;color:#718396;font:11px/1.45 ui-monospace,monospace;overflow-wrap:anywhere}
+.welcome-guide .guide-challenge-link{display:flex;flex-direction:column;gap:9px;height:100%;min-height:112px;padding:17px 18px}
+.welcome-guide .guide-challenge-title{gap:12px;align-items:flex-start}
+.welcome-guide .guide-challenge-title strong{line-height:1.45}
+.welcome-guide .guide-challenge-title>span:last-child{font-weight:750;color:#087b91}
+.welcome-guide .guide-challenge-description{margin:0;color:#60748a;line-height:1.55}
+.welcome-guide .guide-all-challenges{display:inline-flex;align-items:center;justify-content:center;gap:13px;min-height:48px;margin-top:20px;padding:13px 24px;background:#087b91;color:white!important;border-radius:9px;text-decoration:none;font-size:14px;font-weight:800;box-shadow:0 6px 15px #087b912b}
+.welcome-guide .guide-all-challenges:hover{background:#075b70;box-shadow:0 9px 20px #087b913c}
+@media(max-width:760px){
+ .welcome-guide .guide-three>.guide-card{min-height:0}
+ .welcome-guide .guide-access-button{width:100%}
+ .welcome-guide .guide-challenge-link{min-height:0}
+ .welcome-guide .guide-all-challenges{width:100%}
+}
