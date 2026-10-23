@@ -23,7 +23,7 @@ async function run(){
  const api6a=await request('/api/v1/purchases',{method:'POST',token:alice,body:{product_id:1006}});const api6b=await request('/api/v1/purchases',{method:'POST',token:alice,body:{product_id:1006}});assert.equal(api6a.status,201);assert.equal(api6b.status,201);record('API6 repeated limited purchases');
  const api7=await request('/api/v1/products/1000/image/import',{method:'POST',token:admin,body:{url:'http://internal-target:80/internal/marker'}});assert.equal(api7.status,200);assert.match(api7.data.preview,/FAKE-TRAINING-DATA/);record('API7 SSRF internal target');
  const api8=await request('/api/v1/orders/invalid-format',{token:alice});assert.equal(api8.status,500);assert.match(api8.data.query,/SELECT/);record('API8 verbose diagnostics');
- const api9=await request('/api/v2/orders');assert.equal(api9.status,200);assert.ok(api9.data.orders.some(o=>o.customer_id===102));record('API9 exposed v2');
+ const api9=await request('/api/v2/orders-test');assert.equal(api9.status,200);assert.ok(api9.data.orders.some(o=>o.customer_id===102));record('API9 exposed v2');
  const patch=await request('/supplier/products/SUP-1001',{origin:supplier,method:'PATCH',auth:'admin:admin',body:{price:'1.00',description:'Laptop price tampered'}});assert.equal(patch.status,200);
  const patch2=await request('/supplier/products/SUP-1002',{origin:supplier,method:'PATCH',auth:'admin:admin',body:{price:'79.99',description:'<img src=x onerror=alert(1)>'}});assert.equal(patch2.status,200);
  const pending=await request('/api/v1/admin/integrations/supplier/pending',{token:admin});assert.equal(pending.status,200);assert.equal(pending.data.pending.length,2);assert.ok(pending.data.pending.every(p=>/^\d+\.\d{2}$/.test(p.price)));
