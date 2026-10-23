@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -RlF '/api/v2/orders' apps/storefront/dist/assets --include='*.js' > /tmp/api09-assets.txt
+          grep -RlF '/api/v2/orders-test' apps/storefront/dist/assets --include='*.js' > /tmp/api09-assets.txt
           test -s /tmp/api09-assets.txt
       - name: SQLite fixture tests
         run: npm run test:data
