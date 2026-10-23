@@ -24,7 +24,7 @@ test('API09 endpoint inventory is exported to the browser at runtime',()=>{
 test('account URLs use canonical collections while old URLs redirect',()=>{
  assert.match(src,/location\.pathname==='\/orders'/);
  assert.match(src,/location\.pathname==='\/payment-methods'/);
- assert.match(src,/\/\^\\\/orders\\\/\[\^\/\]\+\$\//);
+ assert.match(src,/decodeURIComponent\(location\.pathname\.split\('\/'\)\[2\]\)/);
  assert.match(src,/location\.pathname==='\/account\/orders'/);
  assert.match(src,/location\.pathname==='\/account\/payment-methods'/);
  assert.match(src,/history\.pushState\(\{\},'','\/orders/);
