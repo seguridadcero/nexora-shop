@@ -76,3 +76,14 @@ main{padding-top:30px;padding-bottom:68px;min-height:76vh}
 .order-items-table tfoot th{text-align:right}
 .order-items-table tfoot td{font-size:17px}
 .order-items-table tfoot tr:last-child th,.order-items-table tfoot tr:last-child td{border-bottom:0}
+
+/* Account views share one header and rely on the account menu for navigation. */
+.account-dashboard .account-heading,.order-dashboard .account-heading{padding-bottom:20px}
+.order-dashboard .order-error{border-color:#e2e7ec;background:#fff}
+.order-dashboard .order-error h2{font-size:21px;margin:0 0 8px;color:#26384b}
+.order-dashboard .order-error p{font-size:14px;color:#53697b;margin:0 0 12px}
+.order-dashboard .order-error .order-error-status{color:#8a5960;font-size:12px}
+.order-dashboard .order-error pre{white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;max-height:380px;background:transparent;color:#6f7883;font:12px/1.5 monospace;padding:0;border:0;border-radius:0}
+.order-dashboard .order-lookup{display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;width:max-content;max-width:100%;margin:12px 0 20px auto;background:transparent;border:0;padding:0}
+.order-dashboard .order-lookup>div{flex-wrap:nowrap}
+@media(max-width:600px){.order-dashboard .order-lookup{width:100%;flex-wrap:wrap;justify-content:flex-start}.order-dashboard .order-lookup>div{width:100%;flex-wrap:wrap}}
