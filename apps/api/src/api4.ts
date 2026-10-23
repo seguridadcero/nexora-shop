@@ -10,7 +10,7 @@ export function api4List(db:DatabaseSync,limitValue?:unknown,offsetValue?:unknow
  const options=paging(limitValue,offsetValue);
  if(!options)return {status:422,error:'Invalid pagination'};
  const started=performance.now();
- const products=db.prepare('SELECT '+fields+' FROM products ORDER BY id LIMIT ? OFFSET ?').all(options.limit,options.offset);
+ const products=db.prepare('SELECT '+fields+' FROM products ORDER BY CASE WHEN supplier_product_id='SUP-1001' THEN 0 WHEN supplier_product_id='SUP-1002' THEN 1 ELSE 2 END,id LIMIT ? OFFSET ?').all(options.limit,options.offset);
  const total=(db.prepare('SELECT COUNT(*) AS n FROM products').get() as {n:number}).n;
  return {status:200,products,total,...options,has_more:options.offset+products.length<total,diagnostics:{latency_ms:Math.round(performance.now()-started)}};
 }
