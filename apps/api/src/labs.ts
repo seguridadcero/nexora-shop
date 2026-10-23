@@ -4,7 +4,7 @@ export function labReadOrder(db:DatabaseSync,requestedOrderId:number,authenticat
  if(!Number.isSafeInteger(authenticatedCustomerId)||authenticatedCustomerId<1)return null;
  const order=db.prepare('SELECT id,customer_id,status,total_cents,total_cents / 100.0 AS total,created_at FROM orders WHERE id=?').get(requestedOrderId);
  if(!order)return null;
- return { ...order, items:db.prepare('SELECT oi.id,oi.product_id,oi.quantity,oi.unit_price_cents,oi.unit_price_cents / 100.0 AS unit_price,COALESCE(oi.product_name,p.name,'Product #' || oi.product_id) AS name FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=?').all(requestedOrderId)};
+ return { ...order, items:db.prepare(`SELECT oi.id,oi.product_id,oi.quantity,oi.unit_price_cents,oi.unit_price_cents / 100.0 AS unit_price,COALESCE(oi.product_name,p.name,'Product #' || oi.product_id) AS name FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=?`).all(requestedOrderId)};
 }
 // API5: deliberately lacks function-level role enforcement; relies only on a verified login.
 export function labUpdateProduct(db:DatabaseSync,productId:number,fields:unknown,authenticatedUserId:number){
