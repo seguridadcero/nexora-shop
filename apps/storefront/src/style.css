@@ -87,3 +87,11 @@ main{padding-top:30px;padding-bottom:68px;min-height:76vh}
 .order-dashboard .order-lookup{display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;width:max-content;max-width:100%;margin:12px 0 20px auto;background:transparent;border:0;padding:0}
 .order-dashboard .order-lookup>div{flex-wrap:nowrap}
 @media(max-width:600px){.order-dashboard .order-lookup{width:100%;flex-wrap:wrap;justify-content:flex-start}.order-dashboard .order-lookup>div{width:100%;flex-wrap:wrap}}
+
+/* Purchase-history toolbar: one heading and inline search. */
+.order-dashboard .orders-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid #e5edf2;padding-top:20px;margin:4px 0 18px}
+.order-dashboard .orders-toolbar h2{font-size:19px;line-height:1.35;color:#1d3246;font-weight:700;margin:0}
+.order-dashboard .orders-toolbar .order-lookup{width:auto;max-width:100%;margin:0;padding:0;border:0;background:transparent;display:flex;align-items:center;gap:8px}
+.order-dashboard .orders-toolbar .order-lookup input{height:40px;min-width:155px;max-width:210px;margin:0}
+.order-dashboard .orders-toolbar .order-lookup button{height:40px;padding:9px 15px}
+@media(max-width:600px){.order-dashboard .orders-toolbar{align-items:stretch}.order-dashboard .orders-toolbar .order-lookup{width:100%}.order-dashboard .orders-toolbar .order-lookup>div{display:flex;flex-wrap:nowrap;width:100%}.order-dashboard .orders-toolbar .order-lookup input{min-width:0;flex:1}}
