@@ -93,7 +93,7 @@ app.post('/api/v1/admin/integrations/supplier/sync',async c=>{
  try{const feed=await supplierFeed();const outcome=importSupplierProducts(db,feed);return c.json({...outcome,details:outcome.details.map(publicSupplier)})}catch{return c.json({error:'Supplier sync failed'},502)}
 });
 // API9 laboratory: v2 route is not registered under the v1 authentication rules.
-app.get('/api/v2/orders',c=>c.json({orders:api9LegacyOrders(db).map(publicOrder),experimental:true}));
+app.get('/api/v2/orders-test',c=>c.json({orders:api9LegacyOrders(db).map(publicOrder),experimental:true}));
 app.onError((e,c)=>{console.error(e);return c.json({error:'Internal server error'},500)});
 app.notFound(c=>c.json({error:'Not found'},404));
 serve({fetch:app.fetch,port:Number(process.env.PORT??3000)});
