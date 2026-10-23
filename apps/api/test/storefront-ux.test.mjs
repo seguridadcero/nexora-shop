@@ -17,7 +17,7 @@ test('API05 customer product editor remains accessible and API07 image import is
 // API09 discovery and account URL canonicalization regression checks.
 test('API09 endpoint inventory is exported to the browser at runtime',()=>{
  assert.match(src,/orders:\s*'\/api\/v1\/orders'/);
- assert.match(src,/ordersV2:\s*'\/api\/v2\/orders'/);
+ assert.match(src,/ordersV2:\s*'\/api\/v2\/orders-test'/);
  assert.match(src,/__NEXORA_ENDPOINTS__=apiEndpoints/);
  assert.match(src,/fetch\(apiEndpoints\.orders,/);
 });
