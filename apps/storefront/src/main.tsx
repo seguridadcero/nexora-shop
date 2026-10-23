@@ -2,6 +2,10 @@ import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './style.css';
 import Welcome from './Welcome.js';
+const apiEndpoints = {
+  orders: '/api/v1/orders',
+  ordersV2: '/api/v2/orders'
+} as const;
 type Product={id:number;name:string;description:string;price:string;stock:number;is_limited_edition:number;max_per_customer:number|null;image_path?:string|null};
 type Account={id:number;display_name:string;email:string;role:string};
 type PaymentMethod={id:number;brand:string;last4:string;exp_month:number;exp_year:number;label:string;is_default:number};
