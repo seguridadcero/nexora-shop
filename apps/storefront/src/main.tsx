@@ -4,7 +4,7 @@ import './style.css';
 import Welcome from './Welcome.js';
 const apiEndpoints = {
   orders: '/api/v1/orders',
-  ordersV2: '/api/v2/orders'
+  ordersV2: '/api/v2/orders-test'
 } as const;
 // Runtime endpoint inventory shared with the storefront's browser diagnostics.
 (window as Window & {__NEXORA_ENDPOINTS__?:typeof apiEndpoints}).__NEXORA_ENDPOINTS__=apiEndpoints;
