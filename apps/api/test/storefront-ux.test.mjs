@@ -13,3 +13,20 @@ test('authenticated cart reload and guest subtotal use hydrated state',()=>{asse
 
 test('unified login and canonical admin routes preserve role-specific navigation',()=>{assert.match(src,/history\.replaceState\(\{\},'','\/products\/manage'\);setView\('admin'\)/);assert.match(src,/history\.replaceState\(\{\},'','\/login'\)/);assert.match(src,/legacy==='\/admin\/integrations'\?'\/integrations'/);assert.match(src,/legacy==='\/admin\/products'\?'\/products\/manage'/);assert.match(src,/view==='admin'&&account\?\.role==='admin'/);assert.match(src,/view==='integrations'&&account\?\.role==='admin'/);});
 test('API05 customer product editor remains accessible and API07 image import is admin-only in UI',()=>{assert.match(src,/view==='edit-product'&&\(account\?\.role==='admin'\|\|account\?\.role==='customer'\)/);assert.match(src,/account\?\.role==='admin'&&<><h2>Product Image<\/h2>/);assert.match(src,/\/api\/v1\/products\/.*?image\/import/);});
+
+// API09 discovery and account URL canonicalization regression checks.
+test('API09 endpoint inventory is exported to the browser at runtime',()=>{
+ assert.match(src,/orders:\s*'\/api\/v1\/orders'/);
+ assert.match(src,/ordersV2:\s*'\/api\/v2\/orders'/);
+ assert.match(src,/__NEXORA_ENDPOINTS__=apiEndpoints/);
+ assert.match(src,/fetch\(apiEndpoints\.orders,/);
+});
+test('account URLs use canonical collections while old URLs redirect',()=>{
+ assert.match(src,/location\.pathname==='\/orders'/);
+ assert.match(src,/location\.pathname==='\/payment-methods'/);
+ assert.match(src,/\/\^\\\/orders\\\/\[\^\/\]\+\$\//);
+ assert.match(src,/location\.pathname==='\/account\/orders'/);
+ assert.match(src,/location\.pathname==='\/account\/payment-methods'/);
+ assert.match(src,/history\.pushState\(\{\},'','\/orders/);
+ assert.match(src,/history\.pushState\(\{\},'','\/payment-methods'/);
+});
