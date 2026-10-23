@@ -8,7 +8,7 @@ INSERT INTO products (id,name,description,price_cents,stock,supplier_product_id,
 (1100,'Laptop','High-performance laptop',100000,8,'SUP-1001',80000,0,NULL,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z'),
 (1101,'Wireless Headphones','Premium wireless headphones',7999,20,'SUP-1002',NULL,0,NULL,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z');
 INSERT INTO orders VALUES (5001,101,'confirmed',2900,'2026-01-01T00:00:00Z'),(5002,102,'confirmed',22900,'2026-01-01T00:00:00Z');
-INSERT INTO order_items VALUES (1,5001,1002,1,2900),(2,5002,1003,1,22900);
+INSERT INTO order_items(id,order_id,product_id,quantity,unit_price_cents) VALUES (1,5001,1002,1,2900),(2,5002,1003,1,22900);
 INSERT INTO integrations VALUES (1,'supplier','http://supplier:3001',1,'2026-01-01T00:00:00Z');
 INSERT INTO product_sync_state VALUES (1100,'SUP-1001',1,'2026-01-01T00:00:00Z'),(1101,'SUP-1002',1,'2026-01-01T00:00:00Z');
 
