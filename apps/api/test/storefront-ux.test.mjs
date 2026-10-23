@@ -44,3 +44,5 @@ test('API10 renders supplier descriptions in catalog and details only',()=>{
  assert.match(src,/<div className="product-description">\{p\.description\}<\/div><\/details>/);
  assert.equal([...src.matchAll(/dangerouslySetInnerHTML=\{\{__html:p\.description\}\}/g)].length,2);
 });
+
+test('storefront brand is a real shop link',()=>{assert.match(src,/<a className="shop-logo" href="\/shop">/);});
