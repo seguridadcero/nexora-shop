@@ -1,8 +1,9 @@
 import {Hono} from 'hono';
 import {serve} from '@hono/node-server';
 import {readFileSync} from 'node:fs';
+import {createHmac} from 'node:crypto';
 import {createRequire} from 'node:module';
-import {initialize} from './db.js';
+import {initialize,resetLabData} from './db.js';
 import {getPaymentMethods,payForOrder,getOrderPayment} from './payments.js';
 import {issueToken,verifyToken,validatePassword,ensureDemoPasswords} from './security.js';
 import {openApiSpec} from './openapi.js';
@@ -39,6 +40,23 @@ app.post('/api/v1/auth/login',async c=>{
  const u=db.prepare('SELECT id,email,display_name,role,password_hash FROM users WHERE email=?').get(b.email.toLowerCase()) as any;
  if(!u||!validatePassword(b.password,u.password_hash))return c.json({error:'Invalid credentials'},401);
  return c.json({access_token:issueToken({sub:String(u.id),role:u.role}),token_type:'Bearer',expires_in:3600,user:{id:u.id,email:u.email,display_name:u.display_name,role:u.role}});
+});
+let labResetBusy=false;
+app.post('/api/v1/admin/lab/reset',async c=>{
+ if(labResetBusy)return c.json({error:'Reset already in progress'},409);
+ const body=await parseBody(c);
+ if(body?.confirmation!=='RESET LAB'||typeof body?.email!=='string'||typeof body?.password!=='string')return c.json({error:'Confirmation and administrator credentials required'},400);
+ const admin=db.prepare("SELECT id,password_hash,role FROM users WHERE email=?").get(body.email.toLowerCase()) as {id:number;password_hash:string;role:string}|undefined;
+ if(!admin||admin.role!=='admin'||admin.id!==900||!validatePassword(body.password,admin.password_hash))return c.json({error:'Invalid administrator credentials'},403);
+ labResetBusy=true;
+ try{
+  const key=createHmac('sha256',readFileSync(process.env.JWT_SECRET_FILE??'/data/jwt-secret')).update('supplier-reset-v1').digest('hex');
+  const response=await fetch('http://supplier:8091/supplier/internal/reset',{method:'POST',headers:{'x-lab-reset-key':key},signal:AbortSignal.timeout(5000)});
+  if(!response.ok)return c.json({error:'Supplier reset failed; local data was not modified'},502);
+  resetLabData(db);ensureDemoPasswords(db);
+  return c.json({reset:true,message:'Lab and supplier data restored to initial state'});
+ }catch(error){console.error('Lab reset failed',error);return c.json({error:'Lab reset failed; verify the state before retrying'},500)}
+ finally{labResetBusy=false}
 });
 app.get('/api/v1/account',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);const user=db.prepare('SELECT id,email,display_name,role FROM users WHERE id=?').get(a.id);return user?c.json({user}):c.json({error:'Unauthorized'},401)});
 app.get('/api/v1/account/payment-methods',c=>{const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);return c.json({payment_methods:getPaymentMethods(db,a.id)})});
