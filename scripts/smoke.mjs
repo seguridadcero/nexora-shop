@@ -31,6 +31,11 @@ async function run(){
  assert.equal((await request('/api/v1/products/1100')).data.product.price,'1.00');
  assert.match((await request('/api/v1/products/1101')).data.product.description,/onerror/);assert.match((await request('/api/v1/products/1100')).data.product.image_path,/^https:\/\//);assert.match((await request('/api/v1/products/1101')).data.product.image_path,/^https:\/\//);
  record('API10 supplier price override and stored HTML');
+ const monitorNoAuth=await request('/api/v1/admin/monitor/metrics');assert.equal(monitorNoAuth.status,401);
+ const monitorCustomer=await request('/api/v1/admin/monitor/metrics',{token:alice});assert.equal(monitorCustomer.status,403);
+ const monitorAdmin=await request('/api/v1/admin/monitor/metrics',{token:admin});assert.equal(monitorAdmin.status,200);
+ for(const key of ['cpu','ram','latency'])assert.ok(Number.isFinite(monitorAdmin.data[key]));
+ record('Admin Resource Monitor: authorized metrics, guest 401, customer 403');
  const mon=await request('/metrics',{origin:monitor});assert.equal(mon.status,200);for(const k of ['cpu','ram','latency'])assert.ok(Number.isFinite(mon.data[k]));record('API4 monitor: CPU, RAM, latency');
  const ac=new AbortController();try{const events=await fetch(monitor+'/events',{signal:ac.signal});assert.equal(events.status,200);assert.ok((events.headers.get('content-type')??'').includes('text/event-stream'));const chunk=await events.body.getReader().read();assert.match(new TextDecoder().decode(chunk.value),/data: .*"cpu":/);record('API4 live SSE monitoring stream')}finally{ac.abort()}
 
