@@ -1,2 +1,14 @@
 import {createServer} from 'node:http';
-createServer((req,res)=>{console.log('[INTERNAL-TARGET]',req.method,req.url);res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({service:'nexora-internal-target',scope:'docker-network-only',path:req.url,token:'FAKE-TRAINING-DATA'}))}).listen(3030,'0.0.0.0');
+const pages = {
+  '/': ['Nexora Internal Portal', '<p>Internal operations information.</p><a href="/staff">Staff directory</a>'],
+  '/staff': ['Nexora Staff Directory', '<p>Operations, Inventory and Support (sample data).</p>'],
+  '/internal/marker': ['Nexora Diagnostics', '<p>FAKE-TRAINING-DATA</p>']
+};
+createServer((request, response) => {
+  const route = new URL(request.url ?? '/', 'http://localhost').pathname;
+  const entry = pages[route];
+  const status = request.method !== 'GET' ? 405 : entry ? 200 : 404;
+  const [title, body] = status === 405 ? ['Method Not Allowed', 'GET only'] : entry ?? ['Not Found', 'Page not found'];
+  response.writeHead(status, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});
+  response.end('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>'+title+'</title></head><body><main><h1>'+title+'</h1>'+body+'</main></body></html>');
+}).listen(80, '127.0.0.1');
