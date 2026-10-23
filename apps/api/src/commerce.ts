@@ -23,7 +23,7 @@ export function buyOne(db:DatabaseSync,customerId:number,productId:number):Comme
  }
  const o=db.prepare("INSERT INTO orders(customer_id,status,total_cents,created_at) VALUES(?,'confirmed',?,?)").run(customerId,p.price_cents,new Date().toISOString());
  const id=Number(o.lastInsertRowid);
- db.prepare('INSERT INTO order_items(order_id,product_id,quantity,unit_price_cents) VALUES(?,?,1,?)').run(id,productId,p.price_cents);
+ db.prepare('INSERT INTO order_items(order_id,product_id,quantity,unit_price_cents,product_name) VALUES(?,?,1,?,(SELECT name FROM products WHERE id=?))').run(id,productId,p.price_cents,productId);
  db.prepare('UPDATE products SET stock=stock-1,updated_at=? WHERE id=? AND stock>0').run(new Date().toISOString(),productId);
  db.exec('COMMIT');return {status:201,order_id:id};
  }catch(e){db.exec('ROLLBACK');throw e;}
