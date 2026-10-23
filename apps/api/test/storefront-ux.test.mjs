@@ -30,3 +30,14 @@ test('account URLs use canonical collections while old URLs redirect',()=>{
  assert.match(src,/history\.pushState\(\{\},'','\/orders/);
  assert.match(src,/history\.pushState\(\{\},'','\/payment-methods'/);
 });
+
+// API10: supplier descriptions execute only on product detail pages, not catalog cards.
+test('API10 stored XSS is restricted to supplier product details',()=>{
+ const vulnerableRender=/\(p\.id===1100\|\|p\.id===1101\)\?<div className="product-description" dangerouslySetInnerHTML=\{\{__html:p\.description\}\}\/>:<p>\{p\.description\}<\/p>/g;
+ assert.equal([...src.matchAll(vulnerableRender)].length,1);
+ const detail=src.indexOf("view==='products'&&productDetail!==null");
+ const catalog=src.indexOf("view==='products'&&productDetail===null");
+ assert.ok(catalog>=0&&detail>catalog);
+ assert.ok(src.slice(catalog,detail).includes('<p>{p.description}</p>'));
+ assert.ok(src.slice(detail).includes('dangerouslySetInnerHTML={{__html:p.description}}'));
+});
