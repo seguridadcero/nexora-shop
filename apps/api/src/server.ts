@@ -98,6 +98,17 @@ const supplierFeed=async():Promise<SupplierProduct[]>=>{
  if(!Array.isArray(value.products))throw new Error('Invalid supplier feed');
  return value.products.map(p=>{const cents=centsFromUsd(p.price);if(cents===null)throw new Error('Invalid supplier price');const {price,...details}=p;return {...details,price_cents:cents}});
 };
+app.get('/api/v1/admin/monitor/metrics',async c=>{
+ const a=authenticate(c);
+ if(!a)return c.json({error:'Unauthorized'},401);
+ if(a.role!=='admin')return c.json({error:'Forbidden'},403);
+ try{
+  const response=await fetch('http://127.0.0.1:8092/metrics',{signal:AbortSignal.timeout(2500)});
+  if(!response.ok)throw Error('Monitor unavailable');
+  const metrics=await response.json();
+  return c.json(metrics);
+ }catch{return c.json({error:'Resource monitor unavailable'},503)}
+});
 app.get('/api/v1/admin/integrations',c=>{
  const a=authenticate(c);if(!a)return c.json({error:'Unauthorized'},401);if(a.role!=='admin')return c.json({error:'Forbidden'},403);
  return c.json({integrations:db.prepare('SELECT provider_code,base_url,enabled,last_successful_sync_at FROM integrations').all()});
