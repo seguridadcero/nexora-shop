@@ -72,6 +72,20 @@ jobs:
           curl -fsS http://127.0.0.1:8090/api/docs -o /tmp/nexora-swagger.html
       - name: Verify ten OWASP API lab scenarios over HTTP
         run: node scripts/smoke.mjs
+      - name: Verify persistent data after container restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="$(curl -fsS http://127.0.0.1:8090/api/v1/products/1100 | node -e 'let s="";process.stdin.on("data",x=>s+=x).on("end",()=>console.log(JSON.parse(s).product.price))')"
+          test "$before" = "1.00"
+          docker compose restart
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8090/api/health >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          after="$(curl -fsS http://127.0.0.1:8090/api/v1/products/1100 | node -e 'let s="";process.stdin.on("data",x=>s+=x).on("end",()=>console.log(JSON.parse(s).product.price))')"
+          test "$after" = "$before"
+          echo "PASS persisted supplier product after restart"
       - name: Controlled API4 load assessment
         run: node scripts/api4-load-test.mjs
       - name: Diagnostics on failure
