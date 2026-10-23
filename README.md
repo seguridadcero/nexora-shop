@@ -15,9 +15,9 @@ docker compose up --build -d --wait
 | Nexora Storefront | http://127.0.0.1:8090 | Customer and Admin UI |
 | Swagger UI | http://127.0.0.1:8090/api/docs | Legitimate API contract |
 | Supplier Panel | http://127.0.0.1:8091/ | Edit fictional supplier records |
-| Resource Monitor | http://127.0.0.1:8092 | Real CPU %, RAM MB and API latency ms |
+| Resource Monitor (Admin) | http://127.0.0.1:8090/monitor | Sign in as Shop Admin; CPU %, RAM MB and API latency ms |
 
-The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. Three ports are published on all host interfaces (0.0.0.0) from that one container: 8090 for the store, 8091 for the supplier, and 8092 for the monitor. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
+The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. Three ports remain published on all host interfaces (0.0.0.0) from that one container: 8090 for the store and the integrated administrator monitor, 8091 for the supplier, and 8092 for the legacy standalone monitor. The integrated monitoring API requires an administrator token; the legacy 8092 port remains directly accessible for compatibility. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
 
 ### Fictional customer accounts
 
@@ -41,7 +41,7 @@ The Cart page presents items, a payment method and a single **Place order** acti
 | API1 | Alice obtains Bob's order by changing ID |
 | API2 | Only GET /api/v1/account/orders deliberately accepts a tampered JWT subject; GET /api/v1/account verifies the signature |
 | API3 | Draft order mass assignment changes unit_price_cents |
-| API4 | Costly product searches without request/concurrency limits; independent monitor |
+| API4 | Costly product searches without request/concurrency limits; administrator Resource Monitor at /monitor |
 | API5 | Customer edits Admin-only product stock |
 | API6 | Repeat purchases exceed per-customer limited edition rule |
 | API7 | Admin image import sends a request to an internal Docker HTTP target |
