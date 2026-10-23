@@ -31,15 +31,16 @@ test('account URLs use canonical collections while old URLs redirect',()=>{
  assert.match(src,/history\.pushState\(\{\},'','\/payment-methods'/);
 });
 
-// API10: supplier descriptions execute only on product detail pages, not catalog cards.
-test('API10 stored XSS is restricted to supplier product details',()=>{
+// API10 lab: the two linked supplier products intentionally render stored HTML in
+// the public catalog and the detail page. Other products and Integrations stay escaped.
+test('API10 renders supplier descriptions in catalog and details only',()=>{
  const vulnerableRender=/\(p\.id===1100\|\|p\.id===1101\)\?<div className="product-description" dangerouslySetInnerHTML=\{\{__html:p\.description\}\}\/>:<p>\{p\.description\}<\/p>/g;
- assert.equal([...src.matchAll(vulnerableRender)].length,1);
- const detail=src.indexOf("view==='products'&&productDetail!==null");
+ assert.equal([...src.matchAll(vulnerableRender)].length,2);
  const catalog=src.indexOf("view==='products'&&productDetail===null");
+ const detail=src.indexOf("view==='products'&&productDetail!==null");
  assert.ok(catalog>=0&&detail>catalog);
- assert.ok(src.slice(catalog,detail).includes('<p>{p.description}</p>'));
- assert.ok(src.slice(detail).includes('dangerouslySetInnerHTML={{__html:p.description}}'));
+ assert.match(src.slice(catalog,detail),/dangerouslySetInnerHTML/);
+ assert.match(src.slice(detail),/dangerouslySetInnerHTML/);
+ assert.match(src,/<div className="product-description">\{p\.description\}<\/div><\/details>/);
+ assert.equal([...src.matchAll(/dangerouslySetInnerHTML=\{\{__html:p\.description\}\}/g)].length,2);
 });
-
-test('API10 Integrations displays imported descriptions as text while product detail remains vulnerable',()=>{assert.match(src,/<div className="product-description">\{p\.description\}<\/div><\/details>/);assert.equal([...src.matchAll(/dangerouslySetInnerHTML=\{\{__html:p\.description\}\}/g)].length,1);});
