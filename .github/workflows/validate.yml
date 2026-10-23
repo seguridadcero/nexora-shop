@@ -34,6 +34,12 @@ jobs:
         run: npm run build -w @nexora/api
       - name: Build storefront
         run: npm run build -w @nexora/storefront
+      - name: Verify API09 discovery reference in production JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RlF '/api/v2/orders' apps/storefront/dist/assets --include='*.js' > /tmp/api09-assets.txt
+          test -s /tmp/api09-assets.txt
       - name: SQLite fixture tests
         run: npm run test:data
       - name: Check Compose
