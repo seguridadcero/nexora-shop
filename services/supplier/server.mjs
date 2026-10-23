@@ -1,11 +1,16 @@
 import {createServer} from 'node:http';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,createHmac,timingSafeEqual} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {dirname} from 'node:path';
 const file=process.env.SUPPLIER_DB??'/data/products.json';
 if(!existsSync(file)){mkdirSync(dirname(file),{recursive:true});writeFileSync(file,JSON.stringify([
 {id:'SUP-1001',name:'Laptop',price_cents:100000,description:'High-performance laptop',version:1,updated_at:'2026-01-01T00:00:00Z'},
 {id:'SUP-1002',name:'Wireless Headphones',price_cents:7999,description:'Premium wireless headphones',version:1,updated_at:'2026-01-01T00:00:00Z'}],null,2))}
+const initialProducts=()=>[
+{id:'SUP-1001',name:'Laptop',price_cents:100000,description:'High-performance laptop',version:1,updated_at:'2026-01-01T00:00:00Z'},
+{id:'SUP-1002',name:'Wireless Headphones',price_cents:7999,description:'Premium wireless headphones',version:1,updated_at:'2026-01-01T00:00:00Z'}
+];
+const internalResetKey=()=>createHmac('sha256',readFileSync(process.env.JWT_SECRET_FILE??'/data/jwt-secret')).update('supplier-reset-v1').digest('hex');
 const sessions=new Map();
 const sessionId=req=>(req.headers.cookie??'').split(';').map(x=>x.trim()).find(x=>x.startsWith('meridian_session='))?.slice(17)??'';
 const signedIn=req=>(sessions.get(sessionId(req))??0)>Date.now();
@@ -16,6 +21,14 @@ const centsFromUsd=value=>{const s=typeof value==='number'?String(value):value;i
 const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data))};
 createServer(async(req,res)=>{
  const path=new URL(req.url,'http://supplier').pathname;
+ if(req.method==='POST'&&path==='/supplier/internal/reset'){
+  const provided=req.headers['x-lab-reset-key'];
+  const expected=internalResetKey();
+  if(typeof provided!=='string'||!/^[a-f0-9]{64}$/.test(provided)||!timingSafeEqual(Buffer.from(provided,'hex'),Buffer.from(expected,'hex')))return send(res,403,{error:'Forbidden'});
+  writeFileSync(file,JSON.stringify(initialProducts(),null,2));
+  sessions.clear();
+  return send(res,200,{reset:true});
+ }
  if(req.method==='GET'&&path==='/'){res.writeHead(302,{Location:'/supplier/login'});return res.end()}
 
  if(req.method==='GET'&&path==='/supplier/feed/products')return send(res,200,{products:load().map(publicProduct)});
