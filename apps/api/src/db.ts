@@ -14,6 +14,9 @@ export function initialize(force = false) {
     db.exec('DROP TABLE IF EXISTS order_payments; DROP TABLE IF EXISTS payment_methods; DROP TABLE IF EXISTS cart_items; DROP TABLE IF EXISTS carts; DROP TABLE IF EXISTS product_sync_state; DROP TABLE IF EXISTS integrations; DROP TABLE IF EXISTS order_items; DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS products; DROP TABLE IF EXISTS users;');
   }
   db.exec(readFileSync(schemaPath,'utf8'));
+  const columns=db.prepare('PRAGMA table_info(order_items)').all() as Array<{name:string}>;
+  if(!columns.some(col=>col.name==='product_name'))db.exec('ALTER TABLE order_items ADD COLUMN product_name TEXT');
+  db.exec('UPDATE order_items SET product_name=(SELECT name FROM products WHERE products.id=order_items.product_id) WHERE product_name IS NULL');
   const count = (db.prepare('SELECT COUNT(*) AS n FROM users').get() as {n:number}).n;
   if (count === 0) {
     db.exec('BEGIN IMMEDIATE');
