@@ -56,6 +56,11 @@ jobs:
           curl -fsS http://127.0.0.1:8092/metrics -o /tmp/nexora-metrics.json
           curl -fsS -L http://127.0.0.1:8091/ -o /tmp/nexora-supplier.html
           grep -q 'Product catalog' /tmp/nexora-supplier.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8091/supplier/panel)" = 302
+          curl -fsS -c /tmp/meridian-cookies.txt -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin"}' http://127.0.0.1:8091/supplier/auth/login -o /tmp/meridian-login.json
+          curl -fsS -b /tmp/meridian-cookies.txt http://127.0.0.1:8091/supplier/panel -o /tmp/meridian-panel.html
+          grep -q 'Meridian Supply' /tmp/meridian-panel.html
+          grep -q 'Image URL' /tmp/meridian-panel.html
           grep -q 'Price (USD)' /tmp/nexora-supplier.html
           curl -fsS http://127.0.0.1:8091/supplier/feed/products -o /tmp/nexora-supplier-feed.json
       - name: HTTP smoke tests
