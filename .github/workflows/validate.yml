@@ -55,7 +55,7 @@ jobs:
           curl -fsS http://127.0.0.1:8092/ -o /tmp/nexora-monitor.html
           curl -fsS http://127.0.0.1:8092/metrics -o /tmp/nexora-metrics.json
           curl -fsS -L http://127.0.0.1:8091/ -o /tmp/nexora-supplier.html
-          grep -q 'Supplier Catalog' /tmp/nexora-supplier.html
+          grep -q 'Product catalog' /tmp/nexora-supplier.html
           grep -q 'Price (USD)' /tmp/nexora-supplier.html
           curl -fsS http://127.0.0.1:8091/supplier/feed/products -o /tmp/nexora-supplier-feed.json
       - name: HTTP smoke tests
