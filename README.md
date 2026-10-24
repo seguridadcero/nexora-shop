@@ -17,7 +17,7 @@ docker compose up --build -d --wait
 | Supplier Panel | http://127.0.0.1:8091/ | Edit fictional supplier records |
 | Resource Monitor (Admin) | http://127.0.0.1:8090/monitor | Sign in as Shop Admin; CPU %, RAM MB and API latency ms |
 
-The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. The default deployment binds 8090 and 8091 to localhost; administrators can view monitoring through `/monitor`. A legacy standalone monitor still runs internally on 8092 but is not published by default. For training across multiple machines, explicitly configure network bindings in a controlled host or VM network. The integrated monitoring API requires an administrator token. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
+The API, supplier, internal SSRF target, monitor and Nginx run as separate processes in a single container. To preserve access from a Kali VM network, the existing deployment publishes ports 8090, 8091 and the legacy monitor on 8092 on all host interfaces. This is **not suitable for an untrusted network**: restrict exposure with host firewall or VM networking and never forward these ports to the Internet. The admin monitor is available at `/monitor` and its API requires an administrator token; the legacy monitor on port 8092 remains accessible directly. Existing named data volumes are retained. Docker isolation must still be reviewed before running on shared or untrusted infrastructure.
 
 ### Fictional customer accounts
 
